@@ -2,6 +2,12 @@
 #include "Vertex.h"
 #include "Input.h"
 #include "PathHelpers.h"
+#include "BufferStructs.h"
+
+// ImGui
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_dx11.h"
+#include "imgui/imgui_impl_win32.h"
 
 // Needed for a helper function to load pre-compiled shader files
 #pragma comment(lib, "d3dcompiler.lib")
@@ -47,6 +53,11 @@ Game::~Game()
 
 	// Call Release() on any Direct3D objects made within this class
 	// - Note: this is unnecessary for D3D objects stored in ComPtrs
+
+	// ImGui clean up
+	ImGui_ImplDX11_Shutdown();
+	ImGui_ImplWin32_Shutdown();
+	ImGui::DestroyContext();
 }
 
 // --------------------------------------------------------
@@ -55,6 +66,17 @@ Game::~Game()
 // --------------------------------------------------------
 void Game::Init()
 {
+	// Initialize ImGui &platform/renderer backends
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGui_ImplWin32_Init(hWnd);
+	ImGui_ImplDX11_Init(device.Get(), context.Get());
+
+	// Pick an ImGui style
+	ImGui::StyleColorsDark();
+	// ImGui::StyleColorsClassic();
+	// mGui::StyleColorsLight();
+
 	// Helper methods for loading shaders, creating some basic
 	// geometry to draw and some simple camera matrices.
 	//  - You'll be expanding and/or replacing these later
@@ -82,6 +104,26 @@ void Game::Init()
 		context->VSSetShader(vertexShader.Get(), 0, 0);
 		context->PSSetShader(pixelShader.Get(), 0, 0);
 	}
+
+	// Create the constant buffer
+	{
+		// Get size as the next multiple of 16
+		unsigned int size = sizeof(VertexShaderExternalData);
+		size = (size + 15) / 16 * 16;
+
+		// Describe the constant buffer
+		D3D11_BUFFER_DESC cbDesc = {};
+		cbDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+		cbDesc.ByteWidth = size;
+		cbDesc.CPUAccessFlags = D3D10_CPU_ACCESS_WRITE;
+		cbDesc.Usage = D3D11_USAGE_DYNAMIC;
+
+		device->CreateBuffer(&cbDesc, 0, vsConstantBuffer.GetAddressOf());
+	}
+
+	// Creating vsData
+	vsData.colorTint = XMFLOAT4(1.0f, 0.5f, 0.5f, 0.0f);
+	vsData.offset = XMFLOAT3(0.0f, 0.0f, 0.0f);
 }
 
 // --------------------------------------------------------
@@ -250,6 +292,36 @@ void Game::OnResize()
 // --------------------------------------------------------
 void Game::Update(float deltaTime, float totalTime)
 {
+	// Feed fresh input data to ImGui
+	ImGuiIO& io = ImGui::GetIO();
+	io.DeltaTime = deltaTime;
+	io.DisplaySize.x = (float)this->windowWidth;
+	io.DisplaySize.y = (float)this->windowHeight;
+
+	// Reset the frame
+	ImGui_ImplDX11_NewFrame();
+	ImGui_ImplWin32_NewFrame();
+	ImGui::NewFrame();
+
+	// Determine new input capture
+	Input& input = Input::GetInstance();
+	input.SetKeyboardCapture(io.WantCaptureKeyboard);
+	input.SetMouseCapture(io.WantCaptureMouse);
+
+	// Show demo window
+	// ImGui::ShowDemoWindow();
+
+	// Graphics Interface
+	ImGui::Begin("Graphics Interface");
+
+	ImGui::Text("FrameRate: %.0f", io.Framerate);
+	ImGui::Text("Window Dimensions: %0.f by %.0f", io.DisplaySize.x, io.DisplaySize.y);
+
+	ImGui::DragFloat3("Edit offset", &vsData.offset.x);
+	ImGui::ColorEdit4("Color tint", &vsData.colorTint.x);
+
+	ImGui::End();
+	 
 	// Example input checking: Quit if the escape key is pressed
 	if (Input::GetInstance().KeyDown(VK_ESCAPE))
 		Quit();
@@ -272,6 +344,21 @@ void Game::Draw(float deltaTime, float totalTime)
 		context->ClearDepthStencilView(depthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
 
+	// Constant buffer data
+	{
+		// Mapping the resource
+		D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
+		context->Map(vsConstantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
+		memcpy(mappedBuffer.pData, &vsData, sizeof(vsData));
+		context->Unmap(vsConstantBuffer.Get(), 0);
+
+		// Bind resource
+		context->VSSetConstantBuffers(
+			0,	// Slot (register) to bind to
+			1,	// How many to activate
+			vsConstantBuffer.GetAddressOf());	// Array of buffers
+	}
+
 	// DRAW geometry
 	// - These steps are generally repeated for EACH object you draw
 	// - Other Direct3D calls will also be necessary to do more complex things
@@ -283,6 +370,10 @@ void Game::Draw(float deltaTime, float totalTime)
 			meshes[i]->Draw();
 		}
 	}
+
+	// ImGui rendering
+	ImGui::Render();
+	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
 	// Frame END
 	// - These should happen exactly ONCE PER FRAME

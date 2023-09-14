@@ -1,6 +1,11 @@
 #include "DXCore.h"
 #include "Input.h"
 
+// ImGui
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_dx11.h"
+#include "imgui/imgui_impl_win32.h"
+
 #include <dxgi1_5.h>
 #include <WindowsX.h>
 #include <sstream>
@@ -576,6 +581,17 @@ void DXCore::CreateConsoleWindow(int bufferLines, int bufferColumns, int windowL
 // --------------------------------------------------------
 LRESULT DXCore::ProcessMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
+	// Forward declare ImGui's message hander
+	extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(
+		HWND hWnd,
+		UINT msg,
+		WPARAM wParam,
+		LPARAM lParam);
+
+	// Call ImGui's message handler and exit easrly if necessary
+	if (ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam))
+		return true;
+
 	// Check the incoming message and handle any we care about
 	switch (uMsg)
 	{
