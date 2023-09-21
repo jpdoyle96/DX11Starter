@@ -162,7 +162,7 @@ void Transform::UpdateWorldMatrix()
 
 		// Assign the world and world inverse transpose
 		XMStoreFloat4x4(&worldMatrix, world);
-		XMStoreFloat4x4(&worldMatrix, XMMatrixInverse(0, XMMatrixTranspose(world)));
+		XMStoreFloat4x4(&worldInverseTransposeMatrix, XMMatrixInverse(0, XMMatrixTranspose(world)));
 
 		// The matrix is now clean
 		dirty = false;
