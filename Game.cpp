@@ -121,9 +121,8 @@ void Game::Init()
 		device->CreateBuffer(&cbDesc, 0, vsConstantBuffer.GetAddressOf());
 	}
 
-	// Creating vsData
-	vsData.colorTint = XMFLOAT4(1.0f, 0.5f, 0.5f, 0.0f);
-	vsData.offset = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	// Set up the color tint
+	vsData.colorTint = DirectX::XMFLOAT4(1.0f, 0.5f, 0.5f, 0.0f);
 }
 
 // --------------------------------------------------------
@@ -243,10 +242,10 @@ void Game::CreateGeometry()
 		// Set up the vertices
 		Vertex vertices[] =
 		{
-			{ XMFLOAT3(+0.4f, +0.4f, +0.0f), blue },
-			{ XMFLOAT3(+0.8f, +0.4f, +0.0f), blue },
-			{ XMFLOAT3(+0.4f, +0.8f, +0.0f), red },
-			{ XMFLOAT3(+0.8f, +0.8f, +0.0f), red },
+			{ XMFLOAT3(-0.2f, -0.2f, +0.0f), blue },
+			{ XMFLOAT3(+0.2f, -0.2f, +0.0f), blue },
+			{ XMFLOAT3(-0.2f, +0.2f, +0.0f), red },
+			{ XMFLOAT3(+0.2f, +0.2f, +0.0f), red },
 		};
 
 		// Set up the indices
@@ -261,10 +260,10 @@ void Game::CreateGeometry()
 		// Set up the vertices
 		Vertex vertices[] =
 		{
-			{ XMFLOAT3(-0.9f, -0.9f, +0.0f), green },
-			{ XMFLOAT3(-0.7f, -0.7f, +0.0f), blue },
-			{ XMFLOAT3(-0.9f, +0.7f, +0.0f), red },
-			{ XMFLOAT3(-0.7f, +0.9f, +0.0f), green },
+			{ XMFLOAT3(-0.1f, -0.2f, +0.0f), green },
+			{ XMFLOAT3(+0.1f, -0.1f, +0.0f), blue },
+			{ XMFLOAT3(-0.1f, +0.1f, +0.0f), red },
+			{ XMFLOAT3(+0.1f, +0.2f, +0.0f), green },
 		};
 
 		// Set up the indices
@@ -272,6 +271,54 @@ void Game::CreateGeometry()
 
 		// Add in the mesh
 		meshes.push_back(std::make_shared<Mesh>(vertices, 4, indices, 6, device, context));
+	}
+
+	// Create entities and initial positions 
+	{
+		// Entity 1 (mesh 1)
+		{
+			std::shared_ptr<GameEntity> entity = std::make_shared<GameEntity>(meshes[0]);
+			entity->GetTransform().SetPosition(1.0f, 1.0f, 0.0f);
+			entity->GetTransform().SetScale(1.0f, 1.0f, 1.0f);
+			entity->GetTransform().SetRotation(0.0f, 0.0f, 0.0f);
+			entities.push_back(entity);
+		}
+
+		// Entity 2 (mesh 1)
+		{
+			std::shared_ptr<GameEntity> entity = std::make_shared<GameEntity>(meshes[0]);
+			entity->GetTransform().SetPosition(0.0f, 0.0f, 0.0f);
+			entity->GetTransform().SetScale(1.0f, 1.0f, 1.0f);
+			entity->GetTransform().SetRotation(0.0f, 0.0f, 0.5f);
+			entities.push_back(entity);
+		}
+
+		// Entity 3 (mesh 2)
+		{
+			std::shared_ptr<GameEntity> entity = std::make_shared<GameEntity>(meshes[1]);
+			entity->GetTransform().SetPosition(0.7f, -0.2f, 0.0f);
+			entity->GetTransform().SetScale(1.0f, 1.0f, 1.0f);
+			entity->GetTransform().SetRotation(0.0f, 0.0f, -1.0f);
+			entities.push_back(entity);
+		}
+
+		// Entity 4 (mesh 2)
+		{
+			std::shared_ptr<GameEntity> entity = std::make_shared<GameEntity>(meshes[1]);
+			entity->GetTransform().SetPosition(0.0f, 0.0f, 0.0f);
+			entity->GetTransform().SetScale(1.0f, 1.0f, 1.0f);
+			entity->GetTransform().SetRotation(0.0f, 0.0f, 1.0f);
+			entities.push_back(entity);
+		}
+
+		// Entity 5 (mesh 3)
+		{
+			std::shared_ptr<GameEntity> entity = std::make_shared<GameEntity>(meshes[2]);
+			entity->GetTransform().SetPosition(0.0f, -0.8f, 0.0f);
+			entity->GetTransform().SetScale(1.0f, 1.0f, 1.0f);
+			entity->GetTransform().SetRotation(0.0f, 0.0f, 2.0f);
+			entities.push_back(entity);
+		}
 	}
 }
 
@@ -309,16 +356,110 @@ void Game::Update(float deltaTime, float totalTime)
 	input.SetMouseCapture(io.WantCaptureMouse);
 
 	// Show demo window
-	// ImGui::ShowDemoWindow();
+	//ImGui::ShowDemoWindow();
+	
+	// --= Update entities =--
+	
+	// Translate entity 2
+	entities[1]->GetTransform().MoveAbsolute(0.1f * deltaTime, 0.1f * deltaTime, 0.0f);
+
+	// Rotate entity 4
+	entities[3]->GetTransform().Rotate(0.0f, 0.0f, 1.0f * deltaTime);
 
 	// Graphics Interface
 	ImGui::Begin("Graphics Interface");
 
-	ImGui::Text("FrameRate: %.0f", io.Framerate);
-	ImGui::Text("Window Dimensions: %0.f by %.0f", io.DisplaySize.x, io.DisplaySize.y);
+	// App details
+	if (ImGui::CollapsingHeader("App Details"))
+	{
+		ImGui::Text("FrameRate: %.0f", io.Framerate);
+		ImGui::Text("Window Dimensions: %0.f by %.0f", io.DisplaySize.x, io.DisplaySize.y);
+		ImGui::ColorEdit4("Color tint", &vsData.colorTint.x);
+	}
+	// Force set the color for each mesh
+	for (unsigned int i = 0; i < meshes.size(); i++)
+	{
+		meshes[i]->SetColorTint(vsData.colorTint);
+	}
 
-	ImGui::DragFloat3("Edit offset", &vsData.offset.x);
-	ImGui::ColorEdit4("Color tint", &vsData.colorTint.x);
+	if (ImGui::CollapsingHeader("Entities"))
+	{
+		if (ImGui::TreeNode("Entity 1"))
+		{
+			XMFLOAT3 e1position = entities[0]->GetTransform().GetPosition();
+			XMFLOAT3 e1scale = entities[0]->GetTransform().GetScale();
+			XMFLOAT3 e1rotation = entities[0]->GetTransform().GetPitchYawRoll();
+
+			ImGui::DragFloat3("Position", &e1position.x);
+			ImGui::DragFloat3("Scale", &e1scale.x);
+			ImGui::DragFloat3("Rotation", &e1rotation.x);
+
+			entities[0]->GetTransform().SetPosition(e1position);
+			entities[0]->GetTransform().SetScale(e1scale);
+			entities[0]->GetTransform().SetRotation(e1rotation);
+			ImGui::TreePop();
+		}
+		if (ImGui::TreeNode("Entity 2"))
+		{
+			XMFLOAT3 e2position = entities[1]->GetTransform().GetPosition();
+			XMFLOAT3 e2scale = entities[1]->GetTransform().GetScale();
+			XMFLOAT3 e2rotation = entities[1]->GetTransform().GetPitchYawRoll();
+
+			ImGui::DragFloat3("Position", &e2position.x);
+			ImGui::DragFloat3("Scale", &e2scale.x);
+			ImGui::DragFloat3("Rotation", &e2rotation.x);
+
+			entities[1]->GetTransform().SetPosition(e2position);
+			entities[1]->GetTransform().SetScale(e2scale);
+			entities[1]->GetTransform().SetRotation(e2rotation);
+			ImGui::TreePop();
+		}
+		if (ImGui::TreeNode("Entity 3"))
+		{
+			XMFLOAT3 e3position = entities[2]->GetTransform().GetPosition();
+			XMFLOAT3 e3scale = entities[2]->GetTransform().GetScale();
+			XMFLOAT3 e3rotation = entities[2]->GetTransform().GetPitchYawRoll();
+
+			ImGui::DragFloat3("Position", &e3position.x);
+			ImGui::DragFloat3("Scale", &e3scale.x);
+			ImGui::DragFloat3("Rotation", &e3rotation.x);
+
+			entities[2]->GetTransform().SetPosition(e3position);
+			entities[2]->GetTransform().SetScale(e3scale);
+			entities[2]->GetTransform().SetRotation(e3rotation);
+			ImGui::TreePop();
+		}
+		if (ImGui::TreeNode("Entity 4"))
+		{
+			XMFLOAT3 e4position = entities[3]->GetTransform().GetPosition();
+			XMFLOAT3 e4scale = entities[3]->GetTransform().GetScale();
+			XMFLOAT3 e4rotation = entities[3]->GetTransform().GetPitchYawRoll();
+
+			ImGui::DragFloat3("Position", &e4position.x);
+			ImGui::DragFloat3("Scale", &e4scale.x);
+			ImGui::DragFloat3("Rotation", &e4rotation.x);
+
+			entities[3]->GetTransform().SetPosition(e4position);
+			entities[3]->GetTransform().SetScale(e4scale);
+			entities[3]->GetTransform().SetRotation(e4rotation);
+			ImGui::TreePop();
+		}
+		if (ImGui::TreeNode("Entity 5"))
+		{
+			XMFLOAT3 e5position = entities[4]->GetTransform().GetPosition();
+			XMFLOAT3 e5scale = entities[4]->GetTransform().GetScale();
+			XMFLOAT3 e5rotation = entities[4]->GetTransform().GetPitchYawRoll();
+
+			ImGui::DragFloat3("Position", &e5position.x);
+			ImGui::DragFloat3("Scale", &e5scale.x);
+			ImGui::DragFloat3("Rotation", &e5rotation.x);
+
+			entities[4]->GetTransform().SetPosition(e5position);
+			entities[4]->GetTransform().SetScale(e5scale);
+			entities[4]->GetTransform().SetRotation(e5rotation);
+			ImGui::TreePop();
+		}
+	}
 
 	ImGui::End();
 	 
@@ -344,31 +485,9 @@ void Game::Draw(float deltaTime, float totalTime)
 		context->ClearDepthStencilView(depthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
 
-	// Constant buffer data
+	for (unsigned int i = 0; i < entities.size(); i++)
 	{
-		// Mapping the resource
-		D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
-		context->Map(vsConstantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
-		memcpy(mappedBuffer.pData, &vsData, sizeof(vsData));
-		context->Unmap(vsConstantBuffer.Get(), 0);
-
-		// Bind resource
-		context->VSSetConstantBuffers(
-			0,	// Slot (register) to bind to
-			1,	// How many to activate
-			vsConstantBuffer.GetAddressOf());	// Array of buffers
-	}
-
-	// DRAW geometry
-	// - These steps are generally repeated for EACH object you draw
-	// - Other Direct3D calls will also be necessary to do more complex things
-	UINT stride = sizeof(Vertex);
-	UINT offset = 0;
-	{
-		for (unsigned int i = 0; i < meshes.size(); i++)
-		{
-			meshes[i]->Draw();
-		}
+		entities[i]->DrawEntity(context, vsConstantBuffer);
 	}
 
 	// ImGui rendering

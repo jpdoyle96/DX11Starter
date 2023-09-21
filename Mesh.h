@@ -4,6 +4,7 @@
 #include <d3d11.h>
 #include "DXCore.h"
 #include "Vertex.h"
+#include <DirectXMath.h>
 
 class Mesh
 {
@@ -24,6 +25,12 @@ public:
 	int GetIndexCount();
 	void Draw();
 
+	// Color tint
+	DirectX::XMFLOAT4 GetColorTint();
+	void SetColorTint(float r, float g, float b, float a);
+	void SetColorTint(DirectX::XMFLOAT4 _colorTint);
+	DirectX::XMFLOAT4& GetColorTintRef();
+
 private:
 	// Context
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext>	context;
@@ -34,5 +41,8 @@ private:
 	// Buffers
 	Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> indexBuffer;
+
+	// Color tint
+	DirectX::XMFLOAT4 colorTint;
 };
 

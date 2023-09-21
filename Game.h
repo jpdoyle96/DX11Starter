@@ -4,6 +4,7 @@
 #include "DXCore.h"
 #include <DirectXMath.h>
 #include "Mesh.h"
+#include "GameEntity.h"
 #include <vector>
 #include <memory>
 #include <wrl/client.h> // Used for ComPtr - a smart pointer for COM objects
@@ -36,6 +37,7 @@ private:
 
 	// Objects
 	std::vector<std::shared_ptr<Mesh>> meshes;
+	std::vector<std::shared_ptr<GameEntity>> entities;
 
 	// Shaders and shader-related constructs
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader;

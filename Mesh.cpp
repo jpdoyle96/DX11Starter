@@ -53,6 +53,9 @@ Mesh::Mesh(
 		// Actually create the vertex buffer on the GPU (Output to check HRESULT Flag)
 		std::cout << device->CreateBuffer(&ibd, &res_IndexData, indexBuffer.GetAddressOf()) << std::endl;
 	}
+
+	// Set up the color tint
+	colorTint = DirectX::XMFLOAT4(1.0f, 0.5f, 0.5f, 0.0f);
 }
 
 // --------------------------------------------------------
@@ -112,4 +115,26 @@ void Mesh::Draw()
 			0,     // Offset to the first index we want to use
 			0);    // Offset to add to each index when looking up vertices
 	}
+}
+
+
+// --= Color tint functions =--
+DirectX::XMFLOAT4 Mesh::GetColorTint()
+{
+	return colorTint;
+}
+
+void Mesh::SetColorTint(float r, float g, float b, float a)
+{
+	colorTint = DirectX::XMFLOAT4(r, g, b, a);
+}
+
+void Mesh::SetColorTint(DirectX::XMFLOAT4 _colorTint)
+{
+	colorTint = _colorTint;
+}
+
+DirectX::XMFLOAT4& Mesh::GetColorTintRef()
+{
+	return colorTint;
 }
