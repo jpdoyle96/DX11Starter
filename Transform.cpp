@@ -10,10 +10,15 @@ Transform::Transform()
 	scale = XMFLOAT3(1.0f, 1.0f, 1.0f);
 	rotation = XMFLOAT3(0.0f, 0.0f, 0.0f);
 
+	up = XMFLOAT3(0.0f, 1.0f, 0.0f);
+	right = XMFLOAT3(1.0f, 0.0f, 0.0f);
+	forward = XMFLOAT3(0.0f, 0.0f, 1.0f);
+
 	XMStoreFloat4x4(&worldMatrix, XMMatrixIdentity());
 	XMStoreFloat4x4(&worldInverseTransposeMatrix, XMMatrixIdentity());
 
 	dirty = true;
+	vectorsDirty = false;
 	UpdateWorldMatrix();
 }
 
@@ -68,6 +73,27 @@ void Transform::SetScale(DirectX::XMFLOAT3 _scale)
 
 // --= Getters =--
 
+// Getter right
+DirectX::XMFLOAT3 Transform::GetRight()
+{
+	UpdateVectors();
+	return right;
+}
+
+// Getter up
+DirectX::XMFLOAT3 Transform::GetUp()
+{
+	UpdateVectors();
+	return up;
+}
+
+// Getter forward
+DirectX::XMFLOAT3 Transform::GetForward()
+{
+	UpdateVectors();
+	return forward;
+}
+
 // Getter position
 DirectX::XMFLOAT3 Transform::GetPosition()
 {
@@ -116,11 +142,42 @@ void Transform::MoveAbsolute(DirectX::XMFLOAT3 _offset)
 	dirty = true;
 }
 
+// Position transform relative floats
+void Transform::MoveRelative(float x, float y, float z)
+{
+	// Create direction vector and rotation quaternion
+	XMVECTOR movement = XMVectorSet(x, y, z, 0.0f);
+	XMVECTOR quat = XMQuaternionRotationRollPitchYawFromVector(XMLoadFloat3(&rotation));
+
+	// Rotate movement by quaternion
+	XMVECTOR dir = XMVector3Rotate(movement, quat);
+
+	// Add transformation
+	XMStoreFloat3(&position, XMLoadFloat3(&position) + dir);
+	dirty = true;
+}
+
+// Position transform relative vector
+void Transform::MoveRelative(DirectX::XMFLOAT3 _offset)
+{
+	// Create direction vector and rotation quaternion
+	XMVECTOR movement = XMVectorSet(_offset.x, _offset.y, _offset.z, 0.0f);
+	XMVECTOR quat = XMQuaternionRotationRollPitchYawFromVector(XMLoadFloat3(&rotation));
+
+	// Rotate movement by quaternion
+	XMVECTOR dir = XMVector3Rotate(movement, quat);
+
+	// Add transformation
+	XMStoreFloat3(&position, XMLoadFloat3(&position) + dir);
+	dirty = true;
+}
+
 // Rotation transform floats
 void Transform::Rotate(float pitch, float yaw, float roll)
 {
 	rotation = XMFLOAT3(rotation.x + pitch, rotation.y + yaw, rotation.z + roll);
 	dirty = true;
+	vectorsDirty = true;
 }
 
 // Rotation transfrom vector
@@ -128,6 +185,7 @@ void Transform::Rotate(DirectX::XMFLOAT3 _rotation)
 {
 	rotation = XMFLOAT3(rotation.x + _rotation.x, rotation.y + rotation.y, rotation.z + rotation.z);
 	dirty = true;
+	vectorsDirty = true;
 }
 
 // Scale transform floats
@@ -166,5 +224,18 @@ void Transform::UpdateWorldMatrix()
 
 		// The matrix is now clean
 		dirty = false;
+	}
+}
+
+void Transform::UpdateVectors()
+{
+	if (vectorsDirty == true)
+	{
+		XMVECTOR quat = XMQuaternionRotationRollPitchYawFromVector(XMLoadFloat3(&rotation));
+		XMStoreFloat3(&up, XMVector3Rotate(XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f), quat));
+		XMStoreFloat3(&right, XMVector3Rotate(XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f), quat));
+		XMStoreFloat3(&forward, XMVector3Rotate(XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f), quat));
+
+		vectorsDirty = false;
 	}
 }

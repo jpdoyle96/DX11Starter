@@ -5,6 +5,7 @@
 #include "Transform.h"
 #include "BufferStructs.h"
 #include "DXCore.h"
+#include "Camera.h"
 #include <d3d11.h>
 #include <memory>
 #include <wrl/client.h> // Used for ComPtr - a smart pointer for COM objects
@@ -23,7 +24,8 @@ public:
 
 	// Draw method
 	void DrawEntity(Microsoft::WRL::ComPtr<ID3D11DeviceContext> context,
-					Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer);
+					Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer,
+					std::shared_ptr<Camera> camera);
 
 private:
 	// --= Fields =--

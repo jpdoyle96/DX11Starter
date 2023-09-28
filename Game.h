@@ -4,6 +4,7 @@
 #include "DXCore.h"
 #include <DirectXMath.h>
 #include "Mesh.h"
+#include "Camera.h"
 #include "GameEntity.h"
 #include <vector>
 #include <memory>
@@ -38,6 +39,10 @@ private:
 	// Objects
 	std::vector<std::shared_ptr<Mesh>> meshes;
 	std::vector<std::shared_ptr<GameEntity>> entities;
+
+	// Camera
+	std::shared_ptr<Camera> camera;
+	std::vector<std::shared_ptr<Camera>> cameras;
 
 	// Shaders and shader-related constructs
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader;

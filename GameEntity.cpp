@@ -29,11 +29,13 @@ Transform& GameEntity::GetTransform()
 }
 
 // Draw method
-void GameEntity::DrawEntity(Microsoft::WRL::ComPtr<ID3D11DeviceContext> context, Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer)
+void GameEntity::DrawEntity(Microsoft::WRL::ComPtr<ID3D11DeviceContext> context, Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer, std::shared_ptr<Camera> camera)
 {
 	// Gather updated vsData
 	vsData.colorTint = mesh->GetColorTint();
 	vsData.worldMatrix = transform.GetWorldMatrix();
+	vsData.viewMatrix = camera->GetView();
+	vsData.projectionMatrix = camera->GetProjection();
 	
 
 	// Constant buffer data

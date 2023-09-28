@@ -123,6 +123,46 @@ void Game::Init()
 
 	// Set up the color tint
 	vsData.colorTint = DirectX::XMFLOAT4(1.0f, 0.5f, 0.5f, 0.0f);
+
+	// Create the camera
+	std::shared_ptr<Camera> camera1 = std::make_shared<Camera>(
+		0.0f,		// x
+		0.0f,		// y
+		-10.0f,		// z
+		5.0f,		// move speed
+		0.002f,		// look speed
+		XM_PIDIV4,	// fov
+		(float)windowWidth / windowHeight,	// Aspect ratio
+		0.01f,		// near clip
+		100.0f);	// far clip
+
+	std::shared_ptr<Camera> camera2 = std::make_shared<Camera>(
+		40.0f,		// x
+		0.0f,		// y
+		-50.0f,		// z
+		5.0f,		// move speed
+		0.002f,		// look speed
+		1.2f,		// fov
+		(float)windowWidth / windowHeight,	// Aspect ratio
+		0.01f,		// near clip
+		100.0f);	// far clip
+
+	std::shared_ptr<Camera> camera3 = std::make_shared<Camera>(
+		0.0f,		// x
+		10.0f,		// y
+		-30.0f,		// z
+		5.0f,		// move speed
+		0.002f,		// look speed
+		XM_PIDIV2,	// fov
+		(float)windowWidth / windowHeight,	// Aspect ratio
+		0.01f,		// near clip
+		100.0f);	// far clip
+
+	cameras.push_back(camera1);
+	cameras.push_back(camera2);
+	cameras.push_back(camera3);
+
+	camera = cameras[0];
 }
 
 // --------------------------------------------------------
@@ -332,6 +372,13 @@ void Game::OnResize()
 {
 	// Handle base-level DX resize stuff
 	DXCore::OnResize();
+
+	// Update camera projection matrix
+	
+	for (unsigned int i = 0; i < cameras.size(); i++)
+	{
+		cameras[i]->UpdateProjectionMatrix((float)windowWidth / windowHeight);
+	}
 }
 
 // --------------------------------------------------------
@@ -366,6 +413,9 @@ void Game::Update(float deltaTime, float totalTime)
 	// Rotate entity 4
 	entities[3]->GetTransform().Rotate(0.0f, 0.0f, 1.0f * deltaTime);
 
+	// Update camera
+	camera->Update(deltaTime);
+
 	// Graphics Interface
 	ImGui::Begin("Graphics Interface");
 
@@ -380,6 +430,49 @@ void Game::Update(float deltaTime, float totalTime)
 	for (unsigned int i = 0; i < meshes.size(); i++)
 	{
 		meshes[i]->SetColorTint(vsData.colorTint);
+	}
+
+	if (ImGui::CollapsingHeader("Cameras"))
+	{
+		if (ImGui::TreeNode("Camera 1"))
+		{
+			XMFLOAT3 camPosition = cameras[0]->GetTransform().GetPosition();
+			float fov = cameras[0]->GetFieldOfView();
+
+			if (ImGui::Button("Activate")) camera = cameras[0];
+			ImGui::DragFloat3("Position", &camPosition.x);
+			ImGui::DragFloat("Field of View", &fov);
+
+			cameras[0]->GetTransform().SetPosition(camPosition);
+			cameras[0]->SetFieldOfView(fov);
+			ImGui::TreePop();
+		}
+		if (ImGui::TreeNode("Camera 2"))
+		{
+			XMFLOAT3 camPosition = cameras[1]->GetTransform().GetPosition();
+			float fov = cameras[1]->GetFieldOfView();
+
+			if (ImGui::Button("Activate")) camera = cameras[1];
+			ImGui::DragFloat3("Position", &camPosition.x);
+			ImGui::DragFloat("Field of View", &fov);
+
+			cameras[1]->GetTransform().SetPosition(camPosition);
+			cameras[1]->SetFieldOfView(fov);
+			ImGui::TreePop();
+		}
+		if (ImGui::TreeNode("Camera 3"))
+		{
+			XMFLOAT3 camPosition = cameras[2]->GetTransform().GetPosition();
+			float fov = cameras[2]->GetFieldOfView();
+
+			if (ImGui::Button("Activate")) camera = cameras[2];
+			ImGui::DragFloat3("Position", &camPosition.x);
+			ImGui::DragFloat("Field of View", &fov);
+
+			cameras[2]->GetTransform().SetPosition(camPosition);
+			cameras[2]->SetFieldOfView(fov);
+			ImGui::TreePop();
+		}
 	}
 
 	if (ImGui::CollapsingHeader("Entities"))
@@ -487,7 +580,7 @@ void Game::Draw(float deltaTime, float totalTime)
 
 	for (unsigned int i = 0; i < entities.size(); i++)
 	{
-		entities[i]->DrawEntity(context, vsConstantBuffer);
+		entities[i]->DrawEntity(context, vsConstantBuffer, camera);
 	}
 
 	// ImGui rendering

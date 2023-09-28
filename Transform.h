@@ -20,6 +20,9 @@ public:
 	void SetScale(DirectX::XMFLOAT3 _scale);
 
 	// Getters
+	DirectX::XMFLOAT3 GetRight();
+	DirectX::XMFLOAT3 GetUp();
+	DirectX::XMFLOAT3 GetForward();
 	DirectX::XMFLOAT3 GetPosition();
 	DirectX::XMFLOAT3 GetPitchYawRoll();
 	DirectX::XMFLOAT3 GetScale();
@@ -29,25 +32,34 @@ public:
 	// Transformers
 	void MoveAbsolute(float x, float y, float z);
 	void MoveAbsolute(DirectX::XMFLOAT3 _offset);
+	void MoveRelative(float x, float y, float z);
+	void MoveRelative(DirectX::XMFLOAT3 _offset);
 	void Rotate(float pitch, float yaw, float roll);
 	void Rotate(DirectX::XMFLOAT3 _rotation);
 	void Scale(float x, float y, float z);
 	void Scale(DirectX::XMFLOAT3 _scale);
 
-	// Matrix calculations
+	// Updates
 	void UpdateWorldMatrix();
+	void UpdateVectors();
 
 private:
 
 	// Fields
 
 	DirectX::XMFLOAT3 position;
+	DirectX::XMFLOAT3 rotation;
 	DirectX::XMFLOAT3 scale;
+
+	bool vectorsDirty;
+	DirectX::XMFLOAT3 up;
+	DirectX::XMFLOAT3 right;
+	DirectX::XMFLOAT3 forward;
 
 	DirectX::XMFLOAT4X4 worldMatrix;
 	DirectX::XMFLOAT4X4 worldInverseTransposeMatrix;
 
-	DirectX::XMFLOAT3 rotation;
+	
 
 	bool dirty;
 };
