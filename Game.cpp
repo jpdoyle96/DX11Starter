@@ -146,6 +146,7 @@ void Game::LoadShaders()
 {
 	vertexShader = std::make_shared<SimpleVertexShader>(device, context, FixPath(L"VertexShader.cso").c_str());
 	pixelShader = std::make_shared<SimplePixelShader>(device, context, FixPath(L"PixelShader.cso").c_str());
+	patternShader = std::make_shared<SimplePixelShader>(device, context, FixPath(L"PatternPS.cso").c_str());
 }
 
 // --------------------------------------------------------
@@ -162,8 +163,8 @@ void Game::CreateGeometry()
 
 	// Creating the materials
 	std::shared_ptr<Material> mat1 = std::make_shared<Material>(XMFLOAT3(0.5, 0.5, 0.5), vertexShader, pixelShader);
-	std::shared_ptr<Material> mat2 = std::make_shared<Material>(XMFLOAT3(0.0, 0.5, 0.0), vertexShader, pixelShader);
-	std::shared_ptr<Material> mat3 = std::make_shared<Material>(XMFLOAT3(0.7, 0.5, 0.0), vertexShader, pixelShader);
+	std::shared_ptr<Material> mat2 = std::make_shared<Material>(XMFLOAT3(0.9, 0.2, 0.4), vertexShader, patternShader);
+	std::shared_ptr<Material> mat3 = std::make_shared<Material>(XMFLOAT3(0.8, 0.7, 0.4), vertexShader, patternShader);
 
 	materials.push_back(mat1);
 	materials.push_back(mat2);
@@ -174,7 +175,7 @@ void Game::CreateGeometry()
 	entities.push_back(std::make_shared<GameEntity>(meshes[1], materials[1]));
 	entities.push_back(std::make_shared<GameEntity>(meshes[2], materials[2]));
 	entities.push_back(std::make_shared<GameEntity>(meshes[3], materials[1]));
-	entities.push_back(std::make_shared<GameEntity>(meshes[4], materials[0]));
+	entities.push_back(std::make_shared<GameEntity>(meshes[4], materials[2]));
 
 	// Adjust initial positions
 	entities[0]->GetTransform().MoveAbsolute(-6, 0, 0);
