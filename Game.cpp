@@ -78,7 +78,6 @@ void Game::Init()
 
 	// Helper method for loading shaders
 	LoadShaders();
-	pixelShader = std::make_shared<SimplePixelShader>(device, context, FixPath(L"PixelShader.cso").c_str());
 
 	// Helper method to create basic geometry
 	CreateGeometry();
@@ -162,9 +161,9 @@ void Game::CreateGeometry()
 	meshes.push_back(std::make_shared<Mesh>(FixPath(L"../../Assets/Models/torus.obj").c_str(), device, context));
 
 	// Creating the materials
-	std::shared_ptr<Material> mat1 = std::make_shared<Material>(XMFLOAT4(0.5, 0.5, 0.5, 1.0), vertexShader, pixelShader);
-	std::shared_ptr<Material> mat2 = std::make_shared<Material>(XMFLOAT4(0.0, 0.5, 0.0, 1.0), vertexShader, pixelShader);
-	std::shared_ptr<Material> mat3 = std::make_shared<Material>(XMFLOAT4(0.7, 0.5, 0.0, 1.0), vertexShader, pixelShader);
+	std::shared_ptr<Material> mat1 = std::make_shared<Material>(XMFLOAT3(0.5, 0.5, 0.5), vertexShader, pixelShader);
+	std::shared_ptr<Material> mat2 = std::make_shared<Material>(XMFLOAT3(0.0, 0.5, 0.0), vertexShader, pixelShader);
+	std::shared_ptr<Material> mat3 = std::make_shared<Material>(XMFLOAT3(0.7, 0.5, 0.0), vertexShader, pixelShader);
 
 	materials.push_back(mat1);
 	materials.push_back(mat2);
@@ -229,11 +228,11 @@ void Game::Update(float deltaTime, float totalTime)
 	
 	// --= Update entities =--
 	
-	// Translate entity 2
-	entities[1]->GetTransform().MoveAbsolute(0.1f * deltaTime, 0.1f * deltaTime, 0.0f);
-
-	// Rotate entity 4
-	entities[3]->GetTransform().Rotate(0.0f, 0.0f, 1.0f * deltaTime);
+	// Rotate all entities
+	for (auto& e : entities)
+	{
+		e->GetTransform().Rotate(0.0f, 0.5f * deltaTime, 0.0f);
+	}
 
 	// Update camera
 	camera->Update(deltaTime);

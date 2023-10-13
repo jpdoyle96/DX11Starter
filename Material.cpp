@@ -1,7 +1,7 @@
 #include "Material.h"
 
 // Constructor
-Material::Material(DirectX::XMFLOAT4 colorTint, std::shared_ptr<SimpleVertexShader> vertexShader, std::shared_ptr<SimplePixelShader> pixelShader) :
+Material::Material(DirectX::XMFLOAT3 colorTint, std::shared_ptr<SimpleVertexShader> vertexShader, std::shared_ptr<SimplePixelShader> pixelShader) :
     colorTint(colorTint),
     vertexShader(vertexShader),
     pixelShader(pixelShader)
@@ -14,7 +14,7 @@ Material::~Material()
 }
 
 // Get method - color tint
-DirectX::XMFLOAT4 Material::GetColorTint()
+DirectX::XMFLOAT3 Material::GetColorTint()
 {
     return colorTint;
 }
@@ -32,15 +32,15 @@ std::shared_ptr<SimplePixelShader> Material::GetPixelShader()
 }
 
 // Set method - color tint XMFFLOAT4
-void Material::SetColorTint(DirectX::XMFLOAT4 _colorTint)
+void Material::SetColorTint(DirectX::XMFLOAT3 _colorTint)
 {
     colorTint = _colorTint;
 }
 
 // Set method - color tint floats
-void Material::SetColorTint(float r, float g, float b, float a)
+void Material::SetColorTint(float r, float g, float b)
 {
-    colorTint = DirectX::XMFLOAT4(r, g, b, a);
+    colorTint = DirectX::XMFLOAT3(r, g, b);
 }
 
 // Set method - vertex shader

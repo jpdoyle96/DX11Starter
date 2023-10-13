@@ -43,14 +43,16 @@ void GameEntity::DrawEntity(Microsoft::WRL::ComPtr<ID3D11DeviceContext> context,
 {
 	// Update constant buffer
 	std::shared_ptr<SimpleVertexShader> vs = material->GetVertexShader();
+	std::shared_ptr<SimplePixelShader> ps = material->GetPixelShader();
 
-	vs->SetFloat4("colorTint", material->GetColorTint());
+	ps->SetFloat3("colorTint", material->GetColorTint());
 	vs->SetMatrix4x4("world", transform.GetWorldMatrix());
 	vs->SetMatrix4x4("view", camera->GetView());
 	vs->SetMatrix4x4("projection", camera->GetProjection());
 	
 	// Map the data
 	vs->CopyAllBufferData();
+	ps->CopyAllBufferData();
 
 	// Activate the shaders
 	material->GetVertexShader()->SetShader();
