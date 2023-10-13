@@ -1,9 +1,10 @@
 #pragma once
 
-#include "BufferStructs.h"
 #include "DXCore.h"
 #include <DirectXMath.h>
+#include "SimpleShader.h"
 #include "Mesh.h"
+#include "Material.h"
 #include "Camera.h"
 #include "GameEntity.h"
 #include <vector>
@@ -40,19 +41,18 @@ private:
 	std::vector<std::shared_ptr<Mesh>> meshes;
 	std::vector<std::shared_ptr<GameEntity>> entities;
 
+	// Resources
+	std::vector<std::shared_ptr<Material>> materials;
+
 	// Camera
 	std::shared_ptr<Camera> camera;
 	std::vector<std::shared_ptr<Camera>> cameras;
 
 	// Shaders and shader-related constructs
-	Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader;
-	Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader;
-	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout;
+	std::shared_ptr<SimpleVertexShader> vertexShader;
+	std::shared_ptr<SimplePixelShader> pixelShader;
 
 	// Constant buffers
 	Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer;
-
-	// Constants struct
-	VertexShaderExternalData vsData;
 };
 

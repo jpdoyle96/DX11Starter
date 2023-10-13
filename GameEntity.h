@@ -2,8 +2,8 @@
 
 #include "Transform.h"
 #include "Mesh.h"
+#include "Material.h"
 #include "Transform.h"
-#include "BufferStructs.h"
 #include "DXCore.h"
 #include "Camera.h"
 #include <d3d11.h>
@@ -13,7 +13,7 @@
 class GameEntity
 {
 public:
-	GameEntity(std::shared_ptr<Mesh>);
+	GameEntity(std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material);
 	~GameEntity();
 
 	// --= Methods =--
@@ -21,18 +21,19 @@ public:
 	// Getters
 	std::shared_ptr<Mesh> GetMesh();
 	Transform& GetTransform();
+	std::shared_ptr<Material> GetMaterial();
+
+	// Setters
+	void SetMaterial(std::shared_ptr<Material> material);
 
 	// Draw method
 	void DrawEntity(Microsoft::WRL::ComPtr<ID3D11DeviceContext> context,
-					Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer,
 					std::shared_ptr<Camera> camera);
 
 private:
 	// --= Fields =--
 	Transform transform;
 	std::shared_ptr<Mesh> mesh;
-
-	// Constants struct
-	VertexShaderExternalData vsData;
+	std::shared_ptr<Material> material;
 };
 
