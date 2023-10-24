@@ -163,9 +163,9 @@ void Game::CreateGeometry()
 	meshes.push_back(std::make_shared<Mesh>(FixPath(L"../../Assets/Models/torus.obj").c_str(), device, context));
 
 	// Creating the materials
-	std::shared_ptr<Material> mat1 = std::make_shared<Material>(XMFLOAT3(0.5, 0.5, 0.5), vertexShader, pixelShader, 0.5);
-	std::shared_ptr<Material> mat2 = std::make_shared<Material>(XMFLOAT3(0.9, 0.2, 0.4), vertexShader, pixelShader, 0.8);
-	std::shared_ptr<Material> mat3 = std::make_shared<Material>(XMFLOAT3(0.8, 0.7, 0.4), vertexShader, pixelShader, 0.9);
+	std::shared_ptr<Material> mat1 = std::make_shared<Material>(XMFLOAT3(0.5f, 0.5f, 0.5f), vertexShader, pixelShader, 0.5f);
+	std::shared_ptr<Material> mat2 = std::make_shared<Material>(XMFLOAT3(0.9f, 0.2f, 0.4f), vertexShader, pixelShader, 0.8f);
+	std::shared_ptr<Material> mat3 = std::make_shared<Material>(XMFLOAT3(0.8f, 0.7f, 0.4f), vertexShader, pixelShader, 0.9f);
 
 	materials.push_back(mat1);
 	materials.push_back(mat2);
