@@ -30,7 +30,8 @@ Game::Game(HINSTANCE hInstance)
 		1280,				// Width of the window's client area
 		720,				// Height of the window's client area
 		false,				// Sync the framerate to the monitor refresh? (lock framerate)
-		true)				// Show extra stats (fps) in title bar?
+		true),				// Show extra stats (fps) in title bar?
+	ambientColor(0.1f, 0.1f, 0.25f)
 {
 #if defined(DEBUG) || defined(_DEBUG)
 	// Do we want a console window?  Probably only in debug mode
@@ -162,9 +163,9 @@ void Game::CreateGeometry()
 	meshes.push_back(std::make_shared<Mesh>(FixPath(L"../../Assets/Models/torus.obj").c_str(), device, context));
 
 	// Creating the materials
-	std::shared_ptr<Material> mat1 = std::make_shared<Material>(XMFLOAT3(0.5, 0.5, 0.5), vertexShader, pixelShader);
-	std::shared_ptr<Material> mat2 = std::make_shared<Material>(XMFLOAT3(0.9, 0.2, 0.4), vertexShader, patternShader);
-	std::shared_ptr<Material> mat3 = std::make_shared<Material>(XMFLOAT3(0.8, 0.7, 0.4), vertexShader, patternShader);
+	std::shared_ptr<Material> mat1 = std::make_shared<Material>(XMFLOAT3(0.5, 0.5, 0.5), vertexShader, pixelShader, 0.5);
+	std::shared_ptr<Material> mat2 = std::make_shared<Material>(XMFLOAT3(0.9, 0.2, 0.4), vertexShader, pixelShader, 0.8);
+	std::shared_ptr<Material> mat3 = std::make_shared<Material>(XMFLOAT3(0.8, 0.7, 0.4), vertexShader, pixelShader, 0.9);
 
 	materials.push_back(mat1);
 	materials.push_back(mat2);
@@ -183,6 +184,46 @@ void Game::CreateGeometry()
 	entities[2]->GetTransform().MoveAbsolute(0, 0, 0);
 	entities[3]->GetTransform().MoveAbsolute(3, 0, 0);
 	entities[4]->GetTransform().MoveAbsolute(6, 0, 0);
+
+	// Create the lights
+	Light dirLight1 = {};
+	dirLight1.Color = XMFLOAT3(1, 0.5f, 0);
+	dirLight1.Type = LIGHT_TYPE_DIRECTIONAL;
+	dirLight1.Intensity = 1.0f;
+	dirLight1.Direction = XMFLOAT3(1, 0, 0);
+
+	Light dirLight2 = {};
+	dirLight2.Color = XMFLOAT3(0, 1, 1);
+	dirLight2.Type = LIGHT_TYPE_DIRECTIONAL;
+	dirLight2.Intensity = 1.0f;
+	dirLight2.Direction = XMFLOAT3(0.5f, -1, -1);
+
+	Light dirLight3 = {};
+	dirLight3.Color = XMFLOAT3(0.5f, 0, 1);
+	dirLight3.Type = LIGHT_TYPE_DIRECTIONAL;
+	dirLight3.Intensity = 1.0f;
+	dirLight3.Direction = XMFLOAT3(-1, 1, -0.5f); // Should be normalized (shader is doing it for now)
+
+	Light pointLight1 = {};
+	pointLight1.Color = XMFLOAT3(1, 1, 1);
+	pointLight1.Type = LIGHT_TYPE_POINT;
+	pointLight1.Intensity = 1.0f;
+	pointLight1.Position = XMFLOAT3(-1.5f, 1.0f, 0);
+	pointLight1.Range = 30.0f;
+
+	Light pointLight2 = {};
+	pointLight2.Color = XMFLOAT3(1, 1, 1);
+	pointLight2.Type = LIGHT_TYPE_POINT;
+	pointLight2.Intensity = 1.0f;
+	pointLight2.Position = XMFLOAT3(1.5f, -2.0f, 1.0f);
+	pointLight2.Range = 15.0f;
+
+	// Add all lights to the list
+	lights.push_back(dirLight1);
+	lights.push_back(dirLight2);
+	lights.push_back(dirLight3);
+	lights.push_back(pointLight1);
+	lights.push_back(pointLight2);
 }
 
 // --------------------------------------------------------
@@ -287,6 +328,36 @@ void Game::Update(float deltaTime, float totalTime)
 
 			cameras[2]->GetTransform().SetPosition(camPosition);
 			cameras[2]->SetFieldOfView(fov);
+			ImGui::TreePop();
+		}
+	}
+
+	if (ImGui::CollapsingHeader("Lights"))
+	{
+		ImGui::DragFloat3("Ambient Term", &ambientColor.x);
+		if (ImGui::TreeNode("Light 1"))
+		{
+			ImGui::DragFloat3("Color", &lights[0].Color.x);
+			ImGui::TreePop();
+		}
+		if (ImGui::TreeNode("Light 2"))
+		{
+			ImGui::DragFloat3("Color", &lights[1].Color.x);
+			ImGui::TreePop();
+		}
+		if (ImGui::TreeNode("Light 3"))
+		{
+			ImGui::DragFloat3("Color", &lights[2].Color.x);
+			ImGui::TreePop();
+		}
+		if (ImGui::TreeNode("Light 4"))
+		{
+			ImGui::DragFloat3("Color", &lights[3].Color.x);
+			ImGui::TreePop();
+		}
+		if (ImGui::TreeNode("Light 5"))
+		{
+			ImGui::DragFloat3("Color", &lights[4].Color.x);
 			ImGui::TreePop();
 		}
 	}
@@ -396,6 +467,10 @@ void Game::Draw(float deltaTime, float totalTime)
 
 	for (unsigned int i = 0; i < entities.size(); i++)
 	{
+		// Setting shader inputs
+		entities[i]->GetMaterial()->GetPixelShader()->SetFloat3("ambientColor", ambientColor);
+		entities[i]->GetMaterial()->GetPixelShader()->SetData("lights", &lights[0], sizeof(Light) * (int)lights.size());
+
 		entities[i]->DrawEntity(context, camera);
 	}
 

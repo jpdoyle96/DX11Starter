@@ -5,6 +5,7 @@
 #include "SimpleShader.h"
 #include "Mesh.h"
 #include "Material.h"
+#include "Lights.h"
 #include "Camera.h"
 #include "GameEntity.h"
 #include <vector>
@@ -48,9 +49,15 @@ private:
 	std::shared_ptr<Camera> camera;
 	std::vector<std::shared_ptr<Camera>> cameras;
 
+	// Lights
+	std::vector<Light> lights;
+
 	// Shaders and shader-related constructs
 	std::shared_ptr<SimpleVertexShader> vertexShader;
 	std::shared_ptr<SimplePixelShader> pixelShader;
 	std::shared_ptr<SimplePixelShader> patternShader;
+
+	// Ambient term
+	DirectX::XMFLOAT3 ambientColor;
 };
 

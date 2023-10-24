@@ -46,7 +46,11 @@ void GameEntity::DrawEntity(Microsoft::WRL::ComPtr<ID3D11DeviceContext> context,
 	std::shared_ptr<SimplePixelShader> ps = material->GetPixelShader();
 
 	ps->SetFloat3("colorTint", material->GetColorTint());
+	ps->SetFloat("roughness", material->GetRoughness());
+	ps->SetFloat3("cameraPosition", camera->GetTransform().GetPosition());
+
 	vs->SetMatrix4x4("world", transform.GetWorldMatrix());
+	vs->SetMatrix4x4("worldInvTranspose", transform.GetWorldInverseTransposeMatrix());
 	vs->SetMatrix4x4("view", camera->GetView());
 	vs->SetMatrix4x4("projection", camera->GetProjection());
 	
