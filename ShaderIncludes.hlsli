@@ -84,7 +84,7 @@ float Diffuse(float3 normal, float3 toLight)
 // Phong
 float SpecularPhong(float3 normal, float3 toLight, float3 V, float roughness)
 {
-	if (roughness < 0.05f)
+	if (roughness == 1.0f)
 	{
 		return 0.0f;
 	}
@@ -93,14 +93,14 @@ float SpecularPhong(float3 normal, float3 toLight, float3 V, float roughness)
 
 	float specExponent = (1.0f - roughness) * MAX_SPECULAR_EXPONENT;
 
-	return pow(saturate(dot(R, V)), specExponent);
+	return pow(max(dot(R, V), 0.0f), specExponent);
 }
 
 
 
 // Light Type Functions
 
-float3 DirLight(Light light, float3 normal, float3 worldPos, float3 camPos, float roughness, float3 surfaceColor)
+float3 DirLight(Light light, float3 normal, float3 worldPos, float3 camPos, float roughness, float3 surfaceColor, float specularScale)
 {
 	// Get light direction
 	float3 toLight = normalize(-light.Direction);
@@ -108,13 +108,13 @@ float3 DirLight(Light light, float3 normal, float3 worldPos, float3 camPos, floa
 
 	// Calculate the lighting value
 	float diff = Diffuse(normal, toLight);
-	float spec = SpecularPhong(normal, toLight, V, roughness);
+	float spec = SpecularPhong(normal, toLight, V, roughness) * specularScale;
 
 	// Combine the results
 	return (diff * surfaceColor + spec) * light.Color;
 }
 
-float3 PointLight(Light light, float3 normal, float3 worldPos, float3 camPos, float roughness, float3 surfaceColor)
+float3 PointLight(Light light, float3 normal, float3 worldPos, float3 camPos, float roughness, float3 surfaceColor, float specularScale)
 {
 	// Get light direction
 	float3 toLight = normalize(light.Position - worldPos);
@@ -122,7 +122,7 @@ float3 PointLight(Light light, float3 normal, float3 worldPos, float3 camPos, fl
 
 	// Calculate the lighting value
 	float diff = Diffuse(normal, toLight);
-	float spec = SpecularPhong(normal, toLight, V, roughness);
+	float spec = SpecularPhong(normal, toLight, V, roughness) * specularScale;
 	float atten = Attenuate(light, worldPos);
 
 	// Combine the results
@@ -131,7 +131,7 @@ float3 PointLight(Light light, float3 normal, float3 worldPos, float3 camPos, fl
 
 
 // NOT IMPLEMENTED YET
-float3 SpotLight(Light light, float3 normal, float3 worldPos, float3 camPos, float roughness, float3 surfaceColor)
+float3 SpotLight(Light light, float3 normal, float3 worldPos, float3 camPos, float roughness, float3 surfaceColor, float specularScale)
 {
 	// Get light direction
 	float3 toLight = normalize(-light.Direction);
@@ -146,16 +146,16 @@ float3 SpotLight(Light light, float3 normal, float3 worldPos, float3 camPos, flo
 
 
 // Main light function
-float3 CalcLight(Light light, float3 normal, float3 worldPos, float3 camPos, float roughness, float3 surfaceColor)
+float3 CalcLight(Light light, float3 normal, float3 worldPos, float3 camPos, float roughness, float3 surfaceColor, float specularScale)
 {
 	switch (light.Type)
 	{
 	case LIGHT_TYPE_DIRECTIONAL:
-		return  DirLight(light, normal, worldPos, camPos, roughness, surfaceColor);
+		return  DirLight(light, normal, worldPos, camPos, roughness, surfaceColor, specularScale);
 	case LIGHT_TYPE_POINT:
-		return  PointLight(light, normal, worldPos, camPos, roughness, surfaceColor);
+		return  PointLight(light, normal, worldPos, camPos, roughness, surfaceColor, specularScale);
 	case LIGHT_TYPE_SPOT:
-		return  SpotLight(light, normal, worldPos, camPos, roughness, surfaceColor);
+		return  SpotLight(light, normal, worldPos, camPos, roughness, surfaceColor, specularScale);
 	default:
 		return float3(0.0f, 0.0f, 0.0f);
 	}

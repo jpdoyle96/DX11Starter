@@ -53,6 +53,9 @@ void GameEntity::DrawEntity(Microsoft::WRL::ComPtr<ID3D11DeviceContext> context,
 	vs->SetMatrix4x4("worldInvTranspose", transform.GetWorldInverseTransposeMatrix());
 	vs->SetMatrix4x4("view", camera->GetView());
 	vs->SetMatrix4x4("projection", camera->GetProjection());
+
+	// Prepares the textures
+	material->PrepareTextures();
 	
 	// Map the data
 	vs->CopyAllBufferData();

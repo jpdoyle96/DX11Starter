@@ -38,6 +38,32 @@ float Material::GetRoughness()
     return roughness;
 }
 
+Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> Material::GetTextureSRV(std::string name)
+{
+    // Search for the key
+    auto it = textureSRVs.find(name);
+
+    // Not found, return null
+    if (it == textureSRVs.end())
+        return 0;
+
+    // Return the texture ComPtr
+    return it->second;
+}
+
+Microsoft::WRL::ComPtr<ID3D11SamplerState> Material::GetSampler(std::string name)
+{
+    // Search for the key
+    auto it = samplers.find(name);
+
+    // Not found, return null
+    if (it == samplers.end())
+        return 0;
+
+    // Return the sampler ComPtr
+    return it->second;
+}
+
 // Set method - color tint XMFFLOAT4
 void Material::SetColorTint(DirectX::XMFLOAT3 _colorTint)
 {
@@ -66,4 +92,20 @@ void Material::SetPixelShader(std::shared_ptr<SimplePixelShader> _pixelShader)
 void Material::SetRoughness(float rough)
 {
     roughness = rough;
+}
+
+void Material::AddTextureSRV(std::string name, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv)
+{
+    textureSRVs.insert({ name,srv });
+}
+
+void Material::AddSampler(std::string name, Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler)
+{
+    samplers.insert({ name, sampler });
+}
+
+void Material::PrepareTextures()
+{
+    for (auto& t : textureSRVs) { pixelShader->SetShaderResourceView(t.first.c_str(), t.second.Get()); }
+    for (auto& s : samplers) { pixelShader->SetSamplerState(s.first.c_str(), s.second.Get()); }
 }

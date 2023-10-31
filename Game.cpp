@@ -8,6 +8,8 @@
 #include "imgui/imgui_impl_dx11.h"
 #include "imgui/imgui_impl_win32.h"
 
+#include "WICTextureLoader.h"
+
 // Needed for a helper function to load pre-compiled shader files
 #pragma comment(lib, "d3dcompiler.lib")
 #include <d3dcompiler.h>
@@ -31,7 +33,7 @@ Game::Game(HINSTANCE hInstance)
 		720,				// Height of the window's client area
 		false,				// Sync the framerate to the monitor refresh? (lock framerate)
 		true),				// Show extra stats (fps) in title bar?
-	ambientColor(0.1f, 0.1f, 0.25f)
+	ambientColor(0.25f, 0.25f, 0.25f)
 {
 #if defined(DEBUG) || defined(_DEBUG)
 	// Do we want a console window?  Probably only in debug mode
@@ -162,21 +164,48 @@ void Game::CreateGeometry()
 	meshes.push_back(std::make_shared<Mesh>(FixPath(L"../../Assets/Models/cylinder.obj").c_str(), device, context));
 	meshes.push_back(std::make_shared<Mesh>(FixPath(L"../../Assets/Models/torus.obj").c_str(), device, context));
 
+	// Creating the textures
+	Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler;
+	D3D11_SAMPLER_DESC sampDesc = {};
+	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP; // What happens outside the 0-1 uv range?
+	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.Filter = D3D11_FILTER_ANISOTROPIC;		// How do we handle sampling "between" pixels?
+	sampDesc.MaxAnisotropy = 16;
+	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	device->CreateSamplerState(&sampDesc, sampler.GetAddressOf());
+
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> woodFloorSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> grayStonesSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> woodFloorSpecSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> grayStonesSpecSRV;
+
+	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Textures/wood_floor_deck_diff_4k.jpg").c_str(), 0, woodFloorSRV.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Textures/gray_rocks_diff_4k.jpg").c_str(), 0, grayStonesSRV.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Textures/wood_floor_deck_rough_4k.png").c_str(), 0, woodFloorSpecSRV.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Textures/gray_rocks_rough_4k.png").c_str(), 0, grayStonesSpecSRV.GetAddressOf());
+
 	// Creating the materials
-	std::shared_ptr<Material> mat1 = std::make_shared<Material>(XMFLOAT3(0.5f, 0.5f, 0.5f), vertexShader, pixelShader, 0.5f);
-	std::shared_ptr<Material> mat2 = std::make_shared<Material>(XMFLOAT3(0.9f, 0.2f, 0.4f), vertexShader, pixelShader, 0.8f);
-	std::shared_ptr<Material> mat3 = std::make_shared<Material>(XMFLOAT3(0.8f, 0.7f, 0.4f), vertexShader, pixelShader, 0.9f);
+	std::shared_ptr<Material> mat1 = std::make_shared<Material>(XMFLOAT3(1.0f, 1.0f, 1.0f), vertexShader, pixelShader, 0.95f);
+	std::shared_ptr<Material> mat2 = std::make_shared<Material>(XMFLOAT3(1.0f, 1.0f, 1.0f), vertexShader, pixelShader, 0.95f);
+
+	mat1->AddSampler("BasicSampler", sampler);
+	mat1->AddTextureSRV("SurfaceTexture", woodFloorSRV);
+	mat1->AddTextureSRV("Specular", woodFloorSpecSRV);
+
+	mat2->AddSampler("BasicSampler", sampler);
+	mat2->AddTextureSRV("SurfaceTexture", grayStonesSRV);
+	mat2->AddTextureSRV("Specular", grayStonesSpecSRV);
 
 	materials.push_back(mat1);
 	materials.push_back(mat2);
-	materials.push_back(mat3);
 
 	// Create entities and initial positions 
 	entities.push_back(std::make_shared<GameEntity>(meshes[0], materials[0]));
 	entities.push_back(std::make_shared<GameEntity>(meshes[1], materials[1]));
-	entities.push_back(std::make_shared<GameEntity>(meshes[2], materials[2]));
-	entities.push_back(std::make_shared<GameEntity>(meshes[3], materials[1]));
-	entities.push_back(std::make_shared<GameEntity>(meshes[4], materials[2]));
+	entities.push_back(std::make_shared<GameEntity>(meshes[2], materials[1]));
+	entities.push_back(std::make_shared<GameEntity>(meshes[3], materials[0]));
+	entities.push_back(std::make_shared<GameEntity>(meshes[4], materials[1]));
 
 	// Adjust initial positions
 	entities[0]->GetTransform().MoveAbsolute(-6, 0, 0);

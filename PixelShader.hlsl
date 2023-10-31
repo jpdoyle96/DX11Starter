@@ -11,6 +11,12 @@ cbuffer ExternalData : register(b0)
 }
 
 
+// Texture related resources
+Texture2D SurfaceTexture	: register(t0); // Textures use "t" registers
+Texture2D Specular			: register(t1);
+
+SamplerState BasicSampler	: register(s0); // Samplers use "s" registers
+
 // --------------------------------------------------------
 // The entry point (main method) for our pixel shader
 // 
@@ -24,14 +30,19 @@ float4 main(VertexToPixel input) : SV_TARGET
 {
 	input.normal = normalize(input.normal);
 
-	float3 total = colorTint * ambientColor;
+	float3 surfaceColor = SurfaceTexture.Sample(BasicSampler, input.uv).rgb;
+	surfaceColor *= colorTint;
+
+	float specular = 1.0f - Specular.Sample(BasicSampler, input.uv).r;
+
+	float3 total = surfaceColor * ambientColor;
 
 	for (int i = 0; i < 5; i++)
 	{
 		Light light = lights[i];
 		light.Direction = normalize(light.Direction);
 
-		total += CalcLight(light, input.normal, input.worldPos, cameraPosition, roughness, colorTint);
+		total += CalcLight(light, input.normal, input.worldPos, cameraPosition, roughness, surfaceColor, specular);
 	}
 
 	return float4(total, 1);
