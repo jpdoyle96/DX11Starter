@@ -37,6 +37,10 @@ VertexToPixel main( VertexShaderInput input )
 	output.normal = mul((float3x3)worldInvTranspose, input.normal);
 	output.worldPos = mul(world, float4(input.localPosition, 1)).xyz;
 
+	// Note: The tangent data will not be used by the basic PixelShader, but is 
+	//		passed through regardless as it can be safely ignored in the PS
+	output.tangent = mul((float3x3)world, input.tangent);
+
 	// Whatever we return will make its way through the pipeline to the
 	// next programmable stage we're using (the pixel shader for now)
 	return output;

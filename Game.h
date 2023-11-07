@@ -8,6 +8,7 @@
 #include "Lights.h"
 #include "Camera.h"
 #include "GameEntity.h"
+#include "Sky.h"
 #include <vector>
 #include <memory>
 #include <wrl/client.h> // Used for ComPtr - a smart pointer for COM objects
@@ -56,6 +57,12 @@ private:
 	std::shared_ptr<SimpleVertexShader> vertexShader;
 	std::shared_ptr<SimplePixelShader> pixelShader;
 	std::shared_ptr<SimplePixelShader> patternShader;
+	std::shared_ptr<SimplePixelShader> normalShader;
+
+	// Sky
+	std::shared_ptr<SimpleVertexShader> skyBoxVS;
+	std::shared_ptr<SimplePixelShader> skyBoxPS;
+	std::shared_ptr<Sky> skyBox;
 
 	// Ambient term
 	DirectX::XMFLOAT3 ambientColor;

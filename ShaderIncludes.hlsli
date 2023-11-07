@@ -17,6 +17,7 @@ struct VertexShaderInput
 	float3 localPosition	: POSITION;     // XYZ position
 	float3 normal			: NORMAL;		// XYZ normal vector
 	float2 uv				: TEXCOORD;		// uv texture coordinate
+	float3 tangent			: TANGENT;		// tangent vector
 };
 
 
@@ -35,7 +36,15 @@ struct VertexToPixel
 	float4 screenPosition	: SV_POSITION;
 	float3 normal			: NORMAL;
 	float2 uv				: TEXCOORD;
+	float3 tangent			: TANGENT;
 	float3 worldPos			: POSITION;
+};
+
+// Special VertexToPixel for the SkyBox
+struct VertexToPixel_SkyBox
+{
+	float4 position			: SV_POSITION;
+	float3 sampleDir		: DIRECTION;
 };
 
 
@@ -110,6 +119,9 @@ float3 DirLight(Light light, float3 normal, float3 worldPos, float3 camPos, floa
 	float diff = Diffuse(normal, toLight);
 	float spec = SpecularPhong(normal, toLight, V, roughness) * specularScale;
 
+	// Extreme angle cull
+	spec *= any(diff);
+
 	// Combine the results
 	return (diff * surfaceColor + spec) * light.Color;
 }
@@ -124,6 +136,9 @@ float3 PointLight(Light light, float3 normal, float3 worldPos, float3 camPos, fl
 	float diff = Diffuse(normal, toLight);
 	float spec = SpecularPhong(normal, toLight, V, roughness) * specularScale;
 	float atten = Attenuate(light, worldPos);
+
+	// Extreme angle cull
+	spec *= any(diff);
 
 	// Combine the results
 	return (diff * surfaceColor + spec) * light.Color * atten;

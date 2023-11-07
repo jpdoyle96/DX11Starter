@@ -33,7 +33,7 @@ Game::Game(HINSTANCE hInstance)
 		720,				// Height of the window's client area
 		false,				// Sync the framerate to the monitor refresh? (lock framerate)
 		true),				// Show extra stats (fps) in title bar?
-	ambientColor(0.25f, 0.25f, 0.25f)
+	ambientColor(0.4f, 0.2f, 0.2f)
 {
 #if defined(DEBUG) || defined(_DEBUG)
 	// Do we want a console window?  Probably only in debug mode
@@ -150,6 +150,11 @@ void Game::LoadShaders()
 	vertexShader = std::make_shared<SimpleVertexShader>(device, context, FixPath(L"VertexShader.cso").c_str());
 	pixelShader = std::make_shared<SimplePixelShader>(device, context, FixPath(L"PixelShader.cso").c_str());
 	patternShader = std::make_shared<SimplePixelShader>(device, context, FixPath(L"PatternPS.cso").c_str());
+	normalShader = std::make_shared<SimplePixelShader>(device, context, FixPath(L"NormalPS.cso").c_str());
+
+	// Sky shaders
+	skyBoxVS = std::make_shared<SimpleVertexShader>(device, context, FixPath(L"SkyBoxVS.cso").c_str());
+	skyBoxPS = std::make_shared<SimplePixelShader>(device, context, FixPath(L"SkyBoxPS.cso").c_str());
 }
 
 // --------------------------------------------------------
@@ -179,23 +184,44 @@ void Game::CreateGeometry()
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> grayStonesSRV;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> woodFloorSpecSRV;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> grayStonesSpecSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> woodFloorNormalSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> grayStonesNormalSRV;
 
 	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Textures/wood_floor_deck_diff_4k.jpg").c_str(), 0, woodFloorSRV.GetAddressOf());
 	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Textures/gray_rocks_diff_4k.jpg").c_str(), 0, grayStonesSRV.GetAddressOf());
 	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Textures/wood_floor_deck_rough_4k.png").c_str(), 0, woodFloorSpecSRV.GetAddressOf());
 	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Textures/gray_rocks_rough_4k.png").c_str(), 0, grayStonesSpecSRV.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Textures/wood_floor_deck_nor_gl_4k.png").c_str(), 0, woodFloorNormalSRV.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Textures/gray_rocks_nor_gl_4k.png").c_str(), 0, grayStonesNormalSRV.GetAddressOf());
+
+	// Creating the SkyBox
+	skyBox = std::make_shared<Sky>(
+		FixPath(L"../../Assets/Skies/CloudsPink/right.png").c_str(),
+		FixPath(L"../../Assets/Skies/CloudsPink/left.png").c_str(),
+		FixPath(L"../../Assets/Skies/CloudsPink/up.png").c_str(),
+		FixPath(L"../../Assets/Skies/CloudsPink/down.png").c_str(),
+		FixPath(L"../../Assets/Skies/CloudsPink/front.png").c_str(),
+		FixPath(L"../../Assets/Skies/CloudsPink/back.png").c_str(),
+		sampler,
+		meshes[1],
+		skyBoxVS,
+		skyBoxPS,
+		context,
+		device);
 
 	// Creating the materials
-	std::shared_ptr<Material> mat1 = std::make_shared<Material>(XMFLOAT3(1.0f, 1.0f, 1.0f), vertexShader, pixelShader, 0.95f);
-	std::shared_ptr<Material> mat2 = std::make_shared<Material>(XMFLOAT3(1.0f, 1.0f, 1.0f), vertexShader, pixelShader, 0.95f);
+	std::shared_ptr<Material> mat1 = std::make_shared<Material>(XMFLOAT3(1.0f, 1.0f, 1.0f), vertexShader, normalShader, 0.95f);
+	std::shared_ptr<Material> mat2 = std::make_shared<Material>(XMFLOAT3(1.0f, 1.0f, 1.0f), vertexShader, normalShader, 0.95f);
 
 	mat1->AddSampler("BasicSampler", sampler);
 	mat1->AddTextureSRV("SurfaceTexture", woodFloorSRV);
 	mat1->AddTextureSRV("Specular", woodFloorSpecSRV);
+	mat1->AddTextureSRV("NormalMap", woodFloorNormalSRV);
 
 	mat2->AddSampler("BasicSampler", sampler);
 	mat2->AddTextureSRV("SurfaceTexture", grayStonesSRV);
 	mat2->AddTextureSRV("Specular", grayStonesSpecSRV);
+	mat2->AddTextureSRV("NormalMap", grayStonesNormalSRV);
 
 	materials.push_back(mat1);
 	materials.push_back(mat2);
@@ -216,25 +242,25 @@ void Game::CreateGeometry()
 
 	// Create the lights
 	Light dirLight1 = {};
-	dirLight1.Color = XMFLOAT3(1, 0.5f, 0);
+	dirLight1.Color = XMFLOAT3(1, 0.8f, 0.5f);
 	dirLight1.Type = LIGHT_TYPE_DIRECTIONAL;
 	dirLight1.Intensity = 1.0f;
 	dirLight1.Direction = XMFLOAT3(1, 0, 0);
 
 	Light dirLight2 = {};
-	dirLight2.Color = XMFLOAT3(0, 1, 1);
+	dirLight2.Color = XMFLOAT3(1, 0.5f, 0.8f);
 	dirLight2.Type = LIGHT_TYPE_DIRECTIONAL;
 	dirLight2.Intensity = 1.0f;
 	dirLight2.Direction = XMFLOAT3(0.5f, -1, -1);
 
 	Light dirLight3 = {};
-	dirLight3.Color = XMFLOAT3(0.5f, 0, 1);
+	dirLight3.Color = XMFLOAT3(1.0f, 0.5f, 0.5f);
 	dirLight3.Type = LIGHT_TYPE_DIRECTIONAL;
 	dirLight3.Intensity = 1.0f;
 	dirLight3.Direction = XMFLOAT3(-1, 1, -0.5f); // Should be normalized (shader is doing it for now)
 
 	Light pointLight1 = {};
-	pointLight1.Color = XMFLOAT3(1, 1, 1);
+	pointLight1.Color = XMFLOAT3(0.4f, 0.2f, 0.2f);
 	pointLight1.Type = LIGHT_TYPE_POINT;
 	pointLight1.Intensity = 1.0f;
 	pointLight1.Position = XMFLOAT3(-1.5f, 1.0f, 0);
@@ -502,6 +528,8 @@ void Game::Draw(float deltaTime, float totalTime)
 
 		entities[i]->DrawEntity(context, camera);
 	}
+
+	skyBox->Draw(camera);
 
 	// ImGui rendering
 	ImGui::Render();
