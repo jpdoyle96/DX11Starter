@@ -43,7 +43,7 @@ float4 main(VertexToPixel input) : SV_TARGET
 	// Remap normal
 	input.normal = mul(unpackedNormal, TBN);
 
-	float3 surfaceColor = SurfaceTexture.Sample(BasicSampler, input.uv).rgb;
+	float3 surfaceColor = pow(SurfaceTexture.Sample(BasicSampler, input.uv).rgb, 2.2f);
 	surfaceColor *= colorTint;
 
 	float specular = 1.0f - Specular.Sample(BasicSampler, input.uv).r;
@@ -58,5 +58,5 @@ float4 main(VertexToPixel input) : SV_TARGET
 		total += CalcLight(light, input.normal, input.worldPos, cameraPosition, roughness, surfaceColor, specular);
 	}
 
-	return float4(total, 1);
+	return float4(pow(total, 1.0f / 2.2f), 1);
 }

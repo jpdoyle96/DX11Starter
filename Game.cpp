@@ -180,19 +180,21 @@ void Game::CreateGeometry()
 	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
 	device->CreateSamplerState(&sampDesc, sampler.GetAddressOf());
 
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> woodFloorSRV;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> grayStonesSRV;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> woodFloorSpecSRV;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> grayStonesSpecSRV;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> woodFloorNormalSRV;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> grayStonesNormalSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> scratchedSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> scratchedSpecSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> scratchedNormalSRV;
 
-	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Textures/wood_floor_deck_diff_4k.jpg").c_str(), 0, woodFloorSRV.GetAddressOf());
-	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Textures/gray_rocks_diff_4k.jpg").c_str(), 0, grayStonesSRV.GetAddressOf());
-	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Textures/wood_floor_deck_rough_4k.png").c_str(), 0, woodFloorSpecSRV.GetAddressOf());
-	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Textures/gray_rocks_rough_4k.png").c_str(), 0, grayStonesSpecSRV.GetAddressOf());
-	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Textures/wood_floor_deck_nor_gl_4k.png").c_str(), 0, woodFloorNormalSRV.GetAddressOf());
-	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Textures/gray_rocks_nor_gl_4k.png").c_str(), 0, grayStonesNormalSRV.GetAddressOf());
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> floorSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> floorSpecSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> floorNormalSRV;
+
+	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Textures/scratched_albedo.png").c_str(), 0, scratchedSRV.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Textures/scratched_roughness.png").c_str(), 0, scratchedSpecSRV.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Textures/scratched_normals.png").c_str(), 0, scratchedNormalSRV.GetAddressOf());
+
+	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Textures/floor_albedo.png").c_str(), 0, floorSRV.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Textures/floor_roughness.png").c_str(), 0, floorSpecSRV.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Textures/floor_normals.png").c_str(), 0, floorNormalSRV.GetAddressOf());
 
 	// Creating the SkyBox
 	skyBox = std::make_shared<Sky>(
@@ -214,14 +216,14 @@ void Game::CreateGeometry()
 	std::shared_ptr<Material> mat2 = std::make_shared<Material>(XMFLOAT3(1.0f, 1.0f, 1.0f), vertexShader, normalShader, 0.95f);
 
 	mat1->AddSampler("BasicSampler", sampler);
-	mat1->AddTextureSRV("SurfaceTexture", woodFloorSRV);
-	mat1->AddTextureSRV("Specular", woodFloorSpecSRV);
-	mat1->AddTextureSRV("NormalMap", woodFloorNormalSRV);
+	mat1->AddTextureSRV("SurfaceTexture", scratchedSRV);
+	mat1->AddTextureSRV("Specular", scratchedSpecSRV);
+	mat1->AddTextureSRV("NormalMap", scratchedNormalSRV);
 
 	mat2->AddSampler("BasicSampler", sampler);
-	mat2->AddTextureSRV("SurfaceTexture", grayStonesSRV);
-	mat2->AddTextureSRV("Specular", grayStonesSpecSRV);
-	mat2->AddTextureSRV("NormalMap", grayStonesNormalSRV);
+	mat2->AddTextureSRV("SurfaceTexture", floorSRV);
+	mat2->AddTextureSRV("Specular", floorSpecSRV);
+	mat2->AddTextureSRV("NormalMap", floorNormalSRV);
 
 	materials.push_back(mat1);
 	materials.push_back(mat2);
