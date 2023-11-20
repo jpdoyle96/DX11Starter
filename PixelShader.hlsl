@@ -35,6 +35,10 @@ float4 main(VertexToPixel input) : SV_TARGET
 
 	float specular = 1.0f - Specular.Sample(BasicSampler, input.uv).r;
 
+	float metalness = 1.0f;
+
+	float3 specularColor = (specular, specular, specular);
+
 	float3 total = surfaceColor * ambientColor;
 
 	for (int i = 0; i < 5; i++)
@@ -42,7 +46,7 @@ float4 main(VertexToPixel input) : SV_TARGET
 		Light light = lights[i];
 		light.Direction = normalize(light.Direction);
 
-		total += CalcLight(light, input.normal, input.worldPos, cameraPosition, roughness, surfaceColor, specular);
+		total += CalcLight(light, input.normal, input.worldPos, cameraPosition, roughness, metalness, surfaceColor, specularColor);
 	}
 
 	return float4(pow(total, 1.0f / 2.2f), 1);

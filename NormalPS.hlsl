@@ -12,9 +12,10 @@ cbuffer ExternalData : register(b0)
 
 
 // Texture related resources
-Texture2D SurfaceTexture	: register(t0); // Textures use "t" registers
-Texture2D Specular			: register(t1);
-Texture2D NormalMap			: register(t2);
+Texture2D Albedo			: register(t0); // Textures use "t" registers
+Texture2D RoughnessMap		: register(t1);
+Texture2D MetalnessMap		: register(t2);
+Texture2D NormalMap			: register(t3);
 
 SamplerState BasicSampler	: register(s0); // Samplers use "s" registers
 
@@ -43,10 +44,14 @@ float4 main(VertexToPixel input) : SV_TARGET
 	// Remap normal
 	input.normal = mul(unpackedNormal, TBN);
 
-	float3 surfaceColor = pow(SurfaceTexture.Sample(BasicSampler, input.uv).rgb, 2.2f);
+	float3 surfaceColor = pow(Albedo.Sample(BasicSampler, input.uv).rgb, 2.2f);
 	surfaceColor *= colorTint;
 
-	float specular = 1.0f - Specular.Sample(BasicSampler, input.uv).r;
+	float roughness = RoughnessMap.Sample(BasicSampler, input.uv).r;
+
+	float metalness = MetalnessMap.Sample(BasicSampler, input.uv).r;
+
+	float3 specularColor = lerp(F0_NON_METAL, surfaceColor.rgb, metalness);
 
 	float3 total = surfaceColor * ambientColor;
 
@@ -55,7 +60,7 @@ float4 main(VertexToPixel input) : SV_TARGET
 		Light light = lights[i];
 		light.Direction = normalize(light.Direction);
 
-		total += CalcLight(light, input.normal, input.worldPos, cameraPosition, roughness, surfaceColor, specular);
+		total += CalcLight(light, input.normal, input.worldPos, cameraPosition, roughness, metalness, surfaceColor, specularColor);
 	}
 
 	return float4(pow(total, 1.0f / 2.2f), 1);
