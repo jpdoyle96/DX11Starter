@@ -7,7 +7,7 @@ cbuffer ExternalData : register(b0)
 	float3 colorTint;
 	float3 ambientColor;
 	float3 cameraPosition;
-	Light lights[5];
+	Light lights[6];
 }
 
 
@@ -41,7 +41,7 @@ float4 main(VertexToPixel input) : SV_TARGET
 
 	float3 total = surfaceColor * ambientColor;
 
-	for (int i = 0; i < 5; i++)
+	for (int i = 0; i < 6; i++)
 	{
 		Light light = lights[i];
 		light.Direction = normalize(light.Direction);

@@ -2,6 +2,7 @@
 #include "Vertex.h"
 #include "Input.h"
 #include "PathHelpers.h"
+#include <cmath>
 
 // ImGui
 #include "imgui/imgui.h"
@@ -106,10 +107,10 @@ void Game::Init()
 		XM_PIDIV4,	// fov
 		(float)windowWidth / windowHeight,	// Aspect ratio
 		0.01f,		// near clip
-		100.0f);	// far clip
+		1000.0f);	// far clip
 
 	std::shared_ptr<Camera> camera2 = std::make_shared<Camera>(
-		40.0f,		// x
+		0.0f,		// x
 		0.0f,		// y
 		-50.0f,		// z
 		5.0f,		// move speed
@@ -117,18 +118,20 @@ void Game::Init()
 		1.2f,		// fov
 		(float)windowWidth / windowHeight,	// Aspect ratio
 		0.01f,		// near clip
-		100.0f);	// far clip
+		1000.0f);	// far clip
 
 	std::shared_ptr<Camera> camera3 = std::make_shared<Camera>(
 		0.0f,		// x
-		10.0f,		// y
-		-30.0f,		// z
+		15.0f,		// y
+		-15.0f,		// z
 		5.0f,		// move speed
 		0.002f,		// look speed
 		XM_PIDIV2,	// fov
 		(float)windowWidth / windowHeight,	// Aspect ratio
 		0.01f,		// near clip
-		100.0f);	// far clip
+		1000.0f);	// far clip
+
+	camera3->GetTransform().Rotate(-1.0f, 0.0f, 0.0f);
 
 	cameras.push_back(camera1);
 	cameras.push_back(camera2);
@@ -168,6 +171,7 @@ void Game::CreateGeometry()
 	meshes.push_back(std::make_shared<Mesh>(FixPath(L"../../Assets/Models/helix.obj").c_str(), device, context));
 	meshes.push_back(std::make_shared<Mesh>(FixPath(L"../../Assets/Models/cylinder.obj").c_str(), device, context));
 	meshes.push_back(std::make_shared<Mesh>(FixPath(L"../../Assets/Models/torus.obj").c_str(), device, context));
+	meshes.push_back(std::make_shared<Mesh>(FixPath(L"../../Assets/Models/quad.obj").c_str(), device, context));
 
 	// Creating the textures
 	Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler;
@@ -200,6 +204,11 @@ void Game::CreateGeometry()
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cobblestoneMetalSRV;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cobblestoneNormalSRV;
 
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> paintSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> paintRoughSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> paintMetalSRV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> paintNormalSRV;
+
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> woodSRV;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> woodRoughSRV;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> woodMetalSRV;
@@ -224,6 +233,11 @@ void Game::CreateGeometry()
 	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Textures/cobblestone_roughness.png").c_str(), 0, cobblestoneRoughSRV.GetAddressOf());
 	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Textures/cobblestone_metal.png").c_str(), 0, cobblestoneMetalSRV.GetAddressOf());
 	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Textures/cobblestone_normals.png").c_str(), 0, cobblestoneNormalSRV.GetAddressOf());
+
+	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Textures/paint_albedo.png").c_str(), 0, paintSRV.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Textures/paint_roughness.png").c_str(), 0, paintRoughSRV.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Textures/paint_metal.png").c_str(), 0, paintMetalSRV.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Textures/paint_normals.png").c_str(), 0, paintNormalSRV.GetAddressOf());
 
 	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Textures/wood_albedo.png").c_str(), 0, woodSRV.GetAddressOf());
 	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/Textures/wood_roughness.png").c_str(), 0, woodRoughSRV.GetAddressOf());
@@ -251,6 +265,7 @@ void Game::CreateGeometry()
 	std::shared_ptr<Material> mat3 = std::make_shared<Material>(XMFLOAT3(1.0f, 1.0f, 1.0f), vertexShader, normalShader, 0.95f);
 	std::shared_ptr<Material> mat4 = std::make_shared<Material>(XMFLOAT3(1.0f, 1.0f, 1.0f), vertexShader, normalShader, 0.95f);
 	std::shared_ptr<Material> mat5 = std::make_shared<Material>(XMFLOAT3(1.0f, 1.0f, 1.0f), vertexShader, normalShader, 0.95f);
+	std::shared_ptr<Material> mat6 = std::make_shared<Material>(XMFLOAT3(1.0f, 1.0f, 1.0f), vertexShader, normalShader, 0.95f);
 
 	mat1->AddSampler("BasicSampler", sampler);
 	mat1->AddTextureSRV("Albedo", scratchedSRV);
@@ -277,16 +292,23 @@ void Game::CreateGeometry()
 	mat4->AddTextureSRV("NormalMap", cobblestoneNormalSRV);
 
 	mat5->AddSampler("BasicSampler", sampler);
-	mat5->AddTextureSRV("Albedo", woodSRV);
-	mat5->AddTextureSRV("RoughnessMap", woodRoughSRV);
-	mat5->AddTextureSRV("MetalnessMap", woodMetalSRV);
-	mat5->AddTextureSRV("NormalMap", woodNormalSRV);
+	mat5->AddTextureSRV("Albedo", paintSRV);
+	mat5->AddTextureSRV("RoughnessMap", paintRoughSRV);
+	mat5->AddTextureSRV("MetalnessMap", paintMetalSRV);
+	mat5->AddTextureSRV("NormalMap", paintNormalSRV);
+
+	mat6->AddSampler("BasicSampler", sampler);
+	mat6->AddTextureSRV("Albedo", woodSRV);
+	mat6->AddTextureSRV("RoughnessMap", woodRoughSRV);
+	mat6->AddTextureSRV("MetalnessMap", woodMetalSRV);
+	mat6->AddTextureSRV("NormalMap", woodNormalSRV);
 
 	materials.push_back(mat1);
 	materials.push_back(mat2);
 	materials.push_back(mat3);
 	materials.push_back(mat4);
 	materials.push_back(mat5);
+	materials.push_back(mat6);
 
 	// Create entities and initial positions 
 	entities.push_back(std::make_shared<GameEntity>(meshes[0], materials[0]));
@@ -294,6 +316,11 @@ void Game::CreateGeometry()
 	entities.push_back(std::make_shared<GameEntity>(meshes[2], materials[2]));
 	entities.push_back(std::make_shared<GameEntity>(meshes[3], materials[3]));
 	entities.push_back(std::make_shared<GameEntity>(meshes[4], materials[4]));
+	entities.push_back(std::make_shared<GameEntity>(meshes[5], materials[5]));
+
+	// Adjust scale of the floor
+	entities[5]->GetTransform().MoveAbsolute(0, -10, 0);
+	entities[5]->GetTransform().SetScale(100.0f, 1.0f, 100.0f);
 
 	// Adjust initial positions
 	entities[0]->GetTransform().MoveAbsolute(-6, 0, 0);
@@ -338,6 +365,12 @@ void Game::CreateGeometry()
 	pointLight5.Position = XMFLOAT3(6.0f, 5.0f, -5.0f);
 	pointLight5.Range = 10.0f;
 
+	Light sunLight = {};
+	sunLight.Color = XMFLOAT3(1.0f, 1.0f, 1.0f);
+	sunLight.Type = LIGHT_TYPE_DIRECTIONAL;
+	sunLight.Intensity = 1.0f;
+	sunLight.Direction = XMFLOAT3(0.5f, -0.5f, -0.5f);
+
 	/*
 	Light dirLight1 = {};
 	dirLight1.Color = XMFLOAT3(1, 0.8f, 0.5f);
@@ -364,6 +397,7 @@ void Game::CreateGeometry()
 	lights.push_back(pointLight3);
 	lights.push_back(pointLight4);
 	lights.push_back(pointLight5);
+	lights.push_back(sunLight);
 }
 
 // --------------------------------------------------------
@@ -410,10 +444,19 @@ void Game::Update(float deltaTime, float totalTime)
 	
 	// --= Update entities =--
 	
-	// Rotate all entities
-	for (auto& e : entities)
+	// Transform and rotate the entities
+	for (int i = 0; i < 5; i++)
 	{
-		e->GetTransform().Rotate(0.0f, 0.5f * deltaTime, 0.0f);
+		entities[i]->GetTransform().Rotate(0.0f, 0.5f * deltaTime, 0.0f);
+
+		if (i % 2 == 0)
+		{
+			entities[i]->GetTransform().MoveAbsolute(0.0f, 0.01f * sin(totalTime), 0.0f);
+		}
+		else
+		{
+			entities[i]->GetTransform().MoveAbsolute(0.0f, 0.0f, 0.05f * sin(totalTime));
+		}
 	}
 
 	// Update camera
@@ -474,7 +517,7 @@ void Game::Update(float deltaTime, float totalTime)
 
 	if (ImGui::CollapsingHeader("Lights"))
 	{
-		ImGui::DragFloat3("Ambient Term", &ambientColor.x);
+		ImGui::DragFloat3("Ambient Term", &ambientColor.x, 0.01f, 0.0f, 1.0f);
 		if (ImGui::TreeNode("Light 1"))
 		{
 			ImGui::DragFloat3("Color", &lights[0].Color.x, 0.01f, 0.0f, 1.0f);
