@@ -438,7 +438,7 @@ void Game::Update(float deltaTime, float totalTime)
 
 			if (ImGui::Button("Activate")) camera = cameras[0];
 			ImGui::DragFloat3("Position", &camPosition.x);
-			ImGui::DragFloat("Field of View", &fov);
+			ImGui::DragFloat("Field of View", &fov, 0.01f, 0.01f, 2.0f);
 
 			cameras[0]->GetTransform().SetPosition(camPosition);
 			cameras[0]->SetFieldOfView(fov);
@@ -451,7 +451,7 @@ void Game::Update(float deltaTime, float totalTime)
 
 			if (ImGui::Button("Activate")) camera = cameras[1];
 			ImGui::DragFloat3("Position", &camPosition.x);
-			ImGui::DragFloat("Field of View", &fov);
+			ImGui::DragFloat("Field of View", &fov, 0.01f, 0.01f, 2.0f);
 
 			cameras[1]->GetTransform().SetPosition(camPosition);
 			cameras[1]->SetFieldOfView(fov);
@@ -464,7 +464,7 @@ void Game::Update(float deltaTime, float totalTime)
 
 			if (ImGui::Button("Activate")) camera = cameras[2];
 			ImGui::DragFloat3("Position", &camPosition.x);
-			ImGui::DragFloat("Field of View", &fov);
+			ImGui::DragFloat("Field of View", &fov, 0.01f, 0.01f, 2.0f);
 
 			cameras[2]->GetTransform().SetPosition(camPosition);
 			cameras[2]->SetFieldOfView(fov);
@@ -477,27 +477,32 @@ void Game::Update(float deltaTime, float totalTime)
 		ImGui::DragFloat3("Ambient Term", &ambientColor.x);
 		if (ImGui::TreeNode("Light 1"))
 		{
-			ImGui::DragFloat3("Color", &lights[0].Color.x);
+			ImGui::DragFloat3("Color", &lights[0].Color.x, 0.01f, 0.0f, 1.0f);
+			ImGui::DragFloat("Intensity", &lights[0].Intensity, 0.01f, 0.0f, 1.0f);
 			ImGui::TreePop();
 		}
 		if (ImGui::TreeNode("Light 2"))
 		{
 			ImGui::DragFloat3("Color", &lights[1].Color.x);
+			ImGui::DragFloat("Intensity", &lights[1].Intensity, 0.01f, 0.0f, 1.0f);
 			ImGui::TreePop();
 		}
 		if (ImGui::TreeNode("Light 3"))
 		{
-			ImGui::DragFloat3("Color", &lights[2].Color.x);
+			ImGui::DragFloat3("Color", &lights[2].Color.x, 0.01f, 0.0f, 1.0f);
+			ImGui::DragFloat("Intensity", &lights[2].Intensity, 0.01f, 0.0f, 1.0f);
 			ImGui::TreePop();
 		}
 		if (ImGui::TreeNode("Light 4"))
 		{
-			ImGui::DragFloat3("Color", &lights[3].Color.x);
+			ImGui::DragFloat3("Color", &lights[3].Color.x, 0.01f, 0.0f, 1.0f);
+			ImGui::DragFloat("Intensity", &lights[3].Intensity, 0.01f, 0.0f, 1.0f);
 			ImGui::TreePop();
 		}
 		if (ImGui::TreeNode("Light 5"))
 		{
-			ImGui::DragFloat3("Color", &lights[4].Color.x);
+			ImGui::DragFloat3("Color", &lights[4].Color.x, 0.01f, 0.0f, 1.0f);
+			ImGui::DragFloat("Intensity", &lights[4].Intensity, 0.01f, 0.0f, 1.0f);
 			ImGui::TreePop();
 		}
 	}
@@ -510,9 +515,9 @@ void Game::Update(float deltaTime, float totalTime)
 			XMFLOAT3 e1scale = entities[0]->GetTransform().GetScale();
 			XMFLOAT3 e1rotation = entities[0]->GetTransform().GetPitchYawRoll();
 
-			ImGui::DragFloat3("Position", &e1position.x);
-			ImGui::DragFloat3("Scale", &e1scale.x);
-			ImGui::DragFloat3("Rotation", &e1rotation.x);
+			ImGui::DragFloat3("Position", &e1position.x, 0.05f);
+			ImGui::DragFloat3("Scale", &e1scale.x, 0.05f);
+			ImGui::DragFloat3("Rotation", &e1rotation.x, 0.05f);
 
 			entities[0]->GetTransform().SetPosition(e1position);
 			entities[0]->GetTransform().SetScale(e1scale);
@@ -525,9 +530,9 @@ void Game::Update(float deltaTime, float totalTime)
 			XMFLOAT3 e2scale = entities[1]->GetTransform().GetScale();
 			XMFLOAT3 e2rotation = entities[1]->GetTransform().GetPitchYawRoll();
 
-			ImGui::DragFloat3("Position", &e2position.x);
-			ImGui::DragFloat3("Scale", &e2scale.x);
-			ImGui::DragFloat3("Rotation", &e2rotation.x);
+			ImGui::DragFloat3("Position", &e2position.x, 0.05f);
+			ImGui::DragFloat3("Scale", &e2scale.x, 0.05f);
+			ImGui::DragFloat3("Rotation", &e2rotation.x, 0.05f);
 
 			entities[1]->GetTransform().SetPosition(e2position);
 			entities[1]->GetTransform().SetScale(e2scale);
@@ -540,9 +545,9 @@ void Game::Update(float deltaTime, float totalTime)
 			XMFLOAT3 e3scale = entities[2]->GetTransform().GetScale();
 			XMFLOAT3 e3rotation = entities[2]->GetTransform().GetPitchYawRoll();
 
-			ImGui::DragFloat3("Position", &e3position.x);
-			ImGui::DragFloat3("Scale", &e3scale.x);
-			ImGui::DragFloat3("Rotation", &e3rotation.x);
+			ImGui::DragFloat3("Position", &e3position.x, 0.05f);
+			ImGui::DragFloat3("Scale", &e3scale.x, 0.05f);
+			ImGui::DragFloat3("Rotation", &e3rotation.x, 0.05f);
 
 			entities[2]->GetTransform().SetPosition(e3position);
 			entities[2]->GetTransform().SetScale(e3scale);
@@ -555,9 +560,9 @@ void Game::Update(float deltaTime, float totalTime)
 			XMFLOAT3 e4scale = entities[3]->GetTransform().GetScale();
 			XMFLOAT3 e4rotation = entities[3]->GetTransform().GetPitchYawRoll();
 
-			ImGui::DragFloat3("Position", &e4position.x);
-			ImGui::DragFloat3("Scale", &e4scale.x);
-			ImGui::DragFloat3("Rotation", &e4rotation.x);
+			ImGui::DragFloat3("Position", &e4position.x, 0.05f);
+			ImGui::DragFloat3("Scale", &e4scale.x, 0.05f);
+			ImGui::DragFloat3("Rotation", &e4rotation.x, 0.05f);
 
 			entities[3]->GetTransform().SetPosition(e4position);
 			entities[3]->GetTransform().SetScale(e4scale);
@@ -570,9 +575,9 @@ void Game::Update(float deltaTime, float totalTime)
 			XMFLOAT3 e5scale = entities[4]->GetTransform().GetScale();
 			XMFLOAT3 e5rotation = entities[4]->GetTransform().GetPitchYawRoll();
 
-			ImGui::DragFloat3("Position", &e5position.x);
-			ImGui::DragFloat3("Scale", &e5scale.x);
-			ImGui::DragFloat3("Rotation", &e5rotation.x);
+			ImGui::DragFloat3("Position", &e5position.x, 0.05f);
+			ImGui::DragFloat3("Scale", &e5scale.x, 0.05f);
+			ImGui::DragFloat3("Rotation", &e5rotation.x, 0.05f);
 
 			entities[4]->GetTransform().SetPosition(e5position);
 			entities[4]->GetTransform().SetScale(e5scale);

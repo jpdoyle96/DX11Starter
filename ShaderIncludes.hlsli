@@ -247,7 +247,7 @@ float3 DirLight(Light light, float3 normal, float3 worldPos, float3 camPos, floa
 	float3 balancedDiff = DiffuseEnergyConserve(diff, F, metalness);
 
 	// Combine the results
-	return (balancedDiff * surfaceColor + spec) * light.Color;
+	return (balancedDiff * surfaceColor + spec) * light.Intensity * light.Color;
 }
 
 float3 PointLight(Light light, float3 normal, float3 worldPos, float3 camPos, float roughness, float metalness, float3 surfaceColor, float3 specColor)
@@ -266,7 +266,7 @@ float3 PointLight(Light light, float3 normal, float3 worldPos, float3 camPos, fl
 	float3 balancedDiff = DiffuseEnergyConserve(diff, F, metalness);
 
 	// Combine the results
-	return (balancedDiff * surfaceColor + spec) * light.Color * atten;
+	return (balancedDiff * surfaceColor + spec) * light.Color * light.Intensity * atten;
 }
 
 
