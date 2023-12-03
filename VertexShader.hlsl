@@ -7,6 +7,9 @@ cbuffer ExternalData : register(b0)
 	matrix worldInvTranspose;
 	matrix view;
 	matrix projection;
+
+	matrix lightView;
+	matrix lightProjection;
 }
 
 // --------------------------------------------------------
@@ -40,6 +43,10 @@ VertexToPixel main( VertexShaderInput input )
 	// Note: The tangent data will not be used by the basic PixelShader, but is 
 	//		passed through regardless as it can be safely ignored in the PS
 	output.tangent = mul((float3x3)world, input.tangent);
+
+	// Shadow position calculations
+	matrix shadowWVP = mul(lightProjection, mul(lightView, world));
+	output.shadowMapPos = mul(shadowWVP, float4(input.localPosition, 1.0f));
 
 	// Whatever we return will make its way through the pipeline to the
 	// next programmable stage we're using (the pixel shader for now)

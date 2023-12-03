@@ -58,6 +58,7 @@ private:
 	std::shared_ptr<SimplePixelShader> pixelShader;
 	std::shared_ptr<SimplePixelShader> patternShader;
 	std::shared_ptr<SimplePixelShader> normalShader;
+	std::shared_ptr<SimpleVertexShader> shadowVS;
 
 	// Sky
 	std::shared_ptr<SimpleVertexShader> skyBoxVS;
@@ -66,5 +67,16 @@ private:
 
 	// Ambient term
 	DirectX::XMFLOAT3 ambientColor;
+
+	// Shadow mapping resources
+	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> shadowDSV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> shadowSRV;
+	Microsoft::WRL::ComPtr<ID3D11RasterizerState> shadowRasterizer;
+	Microsoft::WRL::ComPtr<ID3D11SamplerState> shadowSampler;
+	DirectX::XMFLOAT4X4 lightViewMatrix;
+	DirectX::XMFLOAT4X4 lightProjectionMatrix;
+
+	// Shadow helper variables
+	unsigned int shadowMapResolution;
 };
 

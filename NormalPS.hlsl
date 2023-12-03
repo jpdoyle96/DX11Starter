@@ -16,8 +16,10 @@ Texture2D Albedo			: register(t0); // Textures use "t" registers
 Texture2D RoughnessMap		: register(t1);
 Texture2D MetalnessMap		: register(t2);
 Texture2D NormalMap			: register(t3);
+Texture2D ShadowMap			: register(t4);
 
-SamplerState BasicSampler	: register(s0); // Samplers use "s" registers
+SamplerState BasicSampler				: register(s0); // Samplers use "s" registers
+SamplerComparisonState ShadowSampler	: register(s1);
 
 // --------------------------------------------------------
 // The entry point (main method) for our pixel shader
@@ -30,6 +32,23 @@ SamplerState BasicSampler	: register(s0); // Samplers use "s" registers
 // --------------------------------------------------------
 float4 main(VertexToPixel input) : SV_TARGET
 {
+	// Shadow mapping
+	// Perform the perspective divide (divide by W) ourselves
+	input.shadowMapPos /= input.shadowMapPos.w;
+
+	// Convert the normalized device coordinates to UVs for sampling
+	float2 shadowUV = input.shadowMapPos.xy * 0.5f + 0.5f;
+	shadowUV.y = 1 - shadowUV.y; // Flip the Y
+
+	// Grab the distances we need: light-to-pixel and closest-surface
+	float distToLight = input.shadowMapPos.z;
+
+	// Get a ratio of comparison results using SampleCmpLevelZero()
+	float shadowAmount = ShadowMap.SampleCmpLevelZero(
+		ShadowSampler,
+		shadowUV,
+		distToLight).r;
+
 	// Normal mapping
 	float3 unpackedNormal = NormalMap.Sample(BasicSampler, input.uv).rgb * 2 - 1;
 	unpackedNormal = normalize(unpackedNormal);
@@ -60,7 +79,14 @@ float4 main(VertexToPixel input) : SV_TARGET
 		Light light = lights[i];
 		light.Direction = normalize(light.Direction);
 
-		total += CalcLight(light, input.normal, input.worldPos, cameraPosition, roughness, metalness, surfaceColor, specularColor);
+		float3 lightResult = CalcLight(light, input.normal, input.worldPos, cameraPosition, roughness, metalness, surfaceColor, specularColor);
+
+		if (i == 5)	// My directional shadow emitting light
+		{
+			lightResult *= shadowAmount;
+		}
+
+		total += lightResult;
 	}
 
 	return float4(pow(total, 1.0f / 2.2f), 1);
