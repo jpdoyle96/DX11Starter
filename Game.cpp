@@ -215,6 +215,49 @@ void Game::Init()
 		1.0f,
 		100.0f);
 	XMStoreFloat4x4(&lightProjectionMatrix, lightProjection);
+
+	// Sampler state for post processing
+	D3D11_SAMPLER_DESC ppSampDesc = {};
+	ppSampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	ppSampDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	ppSampDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+	ppSampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	ppSampDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	device->CreateSamplerState(&ppSampDesc, ppSampler.GetAddressOf());
+
+	// Blur Render Target Creation
+	D3D11_TEXTURE2D_DESC textureDesc = {};
+	textureDesc.Width = windowWidth;
+	textureDesc.Height = windowHeight;
+	textureDesc.ArraySize = 1;
+	textureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+	textureDesc.CPUAccessFlags = 0;
+	textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	textureDesc.MipLevels = 1;
+	textureDesc.MiscFlags = 0;
+	textureDesc.SampleDesc.Count = 1;
+	textureDesc.SampleDesc.Quality = 0;
+	textureDesc.Usage = D3D11_USAGE_DEFAULT;
+
+	// Create the resource (no need to track it after views created)
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> ppBlurTexture;
+	device->CreateTexture2D(&textureDesc, 0, ppBlurTexture.GetAddressOf());
+
+	// Create the render target view
+	D3D11_RENDER_TARGET_VIEW_DESC rtvBlurDesc = {};
+	rtvBlurDesc.Format = textureDesc.Format;
+	rtvBlurDesc.Texture2D.MipSlice = 0;
+	rtvBlurDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+	device->CreateRenderTargetView(
+		ppBlurTexture.Get(),
+		&rtvBlurDesc,
+		ppBlurRTV.ReleaseAndGetAddressOf());
+	device->CreateShaderResourceView(
+		ppBlurTexture.Get(),
+		0,
+		ppBlurSRV.ReleaseAndGetAddressOf());
+
+	blurRadius = 20;
 }
 
 // --------------------------------------------------------
@@ -231,6 +274,8 @@ void Game::LoadShaders()
 	pixelShader = std::make_shared<SimplePixelShader>(device, context, FixPath(L"PixelShader.cso").c_str());
 	patternShader = std::make_shared<SimplePixelShader>(device, context, FixPath(L"PatternPS.cso").c_str());
 	normalShader = std::make_shared<SimplePixelShader>(device, context, FixPath(L"NormalPS.cso").c_str());
+	ppVS = std::make_shared<SimpleVertexShader>(device, context, FixPath(L"PostVS.cso").c_str());
+	ppBlurPS = std::make_shared<SimplePixelShader>(device, context, FixPath(L"PostBlurPS.cso").c_str());
 
 	// Shadow maps
 	shadowVS = std::make_shared<SimpleVertexShader>(device, context, FixPath(L"ShadowVS.cso").c_str());
@@ -375,7 +420,7 @@ void Game::CreateGeometry()
 	mat5->AddTextureSRV("Albedo", paintSRV);
 	mat5->AddTextureSRV("RoughnessMap", paintRoughSRV);
 	mat5->AddTextureSRV("MetalnessMap", paintMetalSRV);
-	mat5->AddTextureSRV("NormalMap", paintNormalSRV);
+	mat5->AddTextureSRV("NormalMap", paintNormalSRV); 
 
 	mat6->AddSampler("BasicSampler", sampler);
 	mat6->AddTextureSRV("Albedo", woodSRV);
@@ -459,6 +504,54 @@ void Game::CreateGeometry()
 	lights.push_back(sunLight);
 }
 
+void Game::ResizeAllPostProcessResources()
+{
+	ResizeOnePostProcessResource(ppBlurRTV, ppBlurSRV, 1.0f, DXGI_FORMAT_R8G8B8A8_UNORM);
+}
+
+void Game::ResizeOnePostProcessResource(
+		Microsoft::WRL::ComPtr<ID3D11RenderTargetView>& rtv, 
+		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& srv, 
+		float renderTargetScale, 
+		DXGI_FORMAT format)
+{
+	// Reset resources
+	rtv.Reset();
+	srv.Reset();
+
+	// Blur Render Target Creation
+	D3D11_TEXTURE2D_DESC textureDesc = {};
+	textureDesc.Width = (int)(windowWidth * renderTargetScale);
+	textureDesc.Height = (int)(windowHeight * renderTargetScale);
+	textureDesc.ArraySize = 1;
+	textureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+	textureDesc.CPUAccessFlags = 0;
+	textureDesc.Format = format;
+	textureDesc.MipLevels = 1;
+	textureDesc.MiscFlags = 0;
+	textureDesc.SampleDesc.Count = 1;
+	textureDesc.SampleDesc.Quality = 0;
+	textureDesc.Usage = D3D11_USAGE_DEFAULT;
+
+	// Create the resource (no need to track it after views created)
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> ppTexture;
+	device->CreateTexture2D(&textureDesc, 0, ppTexture.GetAddressOf());
+
+	// Create the render target view and shader resourve view
+	D3D11_RENDER_TARGET_VIEW_DESC rtvDesc = {};
+	rtvDesc.Format = textureDesc.Format;
+	rtvDesc.Texture2D.MipSlice = 0;
+	rtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+	device->CreateRenderTargetView(
+		ppTexture.Get(),
+		&rtvDesc,
+		rtv.ReleaseAndGetAddressOf());
+	device->CreateShaderResourceView(
+		ppTexture.Get(),
+		0,
+		srv.ReleaseAndGetAddressOf());
+}
+
 // --------------------------------------------------------
 // Handle resizing to match the new window size.
 //  - DXCore needs to resize the back buffer
@@ -475,6 +568,9 @@ void Game::OnResize()
 	{
 		cameras[i]->UpdateProjectionMatrix((float)windowWidth / windowHeight);
 	}
+
+	// Update all render targets
+	ResizeAllPostProcessResources();
 }
 
 // --------------------------------------------------------
@@ -687,6 +783,10 @@ void Game::Update(float deltaTime, float totalTime)
 			ImGui::TreePop();
 		}
 	}
+	if (ImGui::CollapsingHeader("Post Processing"))
+	{
+		ImGui::DragInt("Blur Radius", &blurRadius, 1, 0, 50);
+	}
 	
 	// Shadow depth map image
 	// ImGui::Image(shadowSRV.Get(), ImVec2(512, 512));
@@ -713,6 +813,15 @@ void Game::Draw(float deltaTime, float totalTime)
 
 		// Clear the depth buffer (resets per-pixel occlusion information)
 		context->ClearDepthStencilView(depthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+	}
+
+	// Pre Draw Post Process
+	{
+		const float clearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f }; // Black
+		context->ClearRenderTargetView(ppBlurRTV.Get(), clearColor);
+
+		// Change the render target 
+		context->OMSetRenderTargets(1, ppBlurRTV.GetAddressOf(), depthBufferDSV.Get());
 	}
 
 	// Render shadows
@@ -755,11 +864,7 @@ void Game::Draw(float deltaTime, float totalTime)
 		viewport.Width = (float)this->windowWidth;
 		viewport.Height = (float)this->windowHeight;
 		context->RSSetViewports(1, &viewport);
-		context->OMSetRenderTargets(
-			1,
-			backBufferRTV.GetAddressOf(),
-			depthBufferDSV.Get());
-		context->RSSetState(0);
+		context->OMSetRenderTargets(1, ppBlurRTV.GetAddressOf(), depthBufferDSV.Get());
 	}
 
 	for (unsigned int i = 0; i < entities.size(); i++)
@@ -780,6 +885,27 @@ void Game::Draw(float deltaTime, float totalTime)
 	}
 
 	skyBox->Draw(camera);
+
+	//  Post Draw Post Process
+	{
+		context->OMSetRenderTargets(1, backBufferRTV.GetAddressOf(), 0);
+
+		// Activate shaders and bind resources
+		// Also set any required cbuffer data (not shown)
+		ppVS->SetShader();
+		ppBlurPS->SetShader();
+		
+		ppBlurPS->SetShaderResourceView("Pixels", ppBlurSRV.Get());
+		ppBlurPS->SetSamplerState("ClampSampler", ppSampler.Get());
+
+		ppBlurPS->SetInt("blurRadius", blurRadius);
+		ppBlurPS->SetFloat("pixelWidth", 1.0f / windowWidth);
+		ppBlurPS->SetFloat("pixelHeight", 1.0f / windowHeight);
+		ppBlurPS->CopyAllBufferData();
+
+		// Present tot he user
+		context->Draw(3, 0);
+	}
 
 	// ImGui rendering
 	ImGui::Render();

@@ -34,6 +34,14 @@ private:
 	void LoadShaders(); 
 	void CreateGeometry();
 
+	// Post Process Functions
+	void ResizeAllPostProcessResources();
+	void ResizeOnePostProcessResource(
+		Microsoft::WRL::ComPtr<ID3D11RenderTargetView>& rtv,
+		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& srv,
+		float renderTargetScale = 1.0f,
+		DXGI_FORMAT format = DXGI_FORMAT_R8G8B8A8_UNORM);
+
 	// Note the usage of ComPtr below
 	//  - This is a smart pointer for objects that abide by the
 	//     Component Object Model, which DirectX objects do
@@ -78,5 +86,17 @@ private:
 
 	// Shadow helper variables
 	unsigned int shadowMapResolution;
+
+	// Post Process Resources
+	Microsoft::WRL::ComPtr<ID3D11SamplerState> ppSampler;
+	std::shared_ptr<SimpleVertexShader> ppVS;
+
+	// Resources that are tied to a particular post process
+	std::shared_ptr<SimplePixelShader> ppBlurPS;
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> ppBlurRTV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> ppBlurSRV;
+
+	// Blur level
+	int blurRadius;
 };
 
